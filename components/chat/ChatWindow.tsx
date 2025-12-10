@@ -5,6 +5,20 @@ import { ChatService } from '@/lib/services/chat';
 import { useAuth } from '@/lib/auth';
 import { Messages } from '@/types/appwrite';
 import { useRouter } from 'next/navigation';
+import { 
+    Box, 
+    Paper, 
+    Typography, 
+    TextField, 
+    IconButton, 
+    Button, 
+    CircularProgress,
+    AppBar,
+    Toolbar
+} from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import CallIcon from '@mui/icons-material/Call';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     const { user } = useAuth();
@@ -17,7 +31,6 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     useEffect(() => {
         if (conversationId) {
             loadMessages();
-            // Poll for new messages every 5 seconds for MVP
             const interval = setInterval(loadMessages, 5000);
             return () => clearInterval(interval);
         }
@@ -30,7 +43,6 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     const loadMessages = async () => {
         try {
             const response = await ChatService.getMessages(conversationId);
-            // Appwrite returns newest first, so reverse for display
             setMessages(response.rows.reverse() as unknown as Messages[]);
         } catch (error) {
             console.error('Failed to load messages:', error);
@@ -48,145 +60,121 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
         if (!inputText.trim() || !user) return;
 
         const text = inputText;
-        setInputText(''); // Optimistic clear
+        setInputText('');
 
         try {
             await ChatService.sendMessage(conversationId, user.$id, text);
-            loadMessages(); // Refresh immediately
+            loadMessages();
         } catch (error) {
             console.error('Failed to send message:', error);
-            setInputText(text); // Restore on error
+            setInputText(text);
         }
     };
 
     const handleCall = () => {
-        // Navigate to call page with this conversation ID
         router.push(`/call/${conversationId}?caller=true`);
     };
 
-    if (loading) return <div style={{ padding: '20px' }}>Loading conversation...</div>;
+    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
             {/* Header */}
-            <div style={{ 
-                padding: '15px 20px', 
-                borderBottom: '1px solid #eee', 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                backgroundColor: '#fff'
-            }}>
-                <div style={{ fontWeight: 'bold' }}>Chat</div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
+            <AppBar position="static" color="default" elevation={1}>
+                <Toolbar>
+                    <IconButton edge="start" onClick={() => router.back()} sx={{ mr: 1 }}>
+                        <ArrowBackIcon />
+                    </IconButton>
+                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                        Chat
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        startIcon={<CallIcon />} 
                         onClick={handleCall}
-                        style={{
-                            padding: '8px 16px',
-                            borderRadius: '20px',
-                            backgroundColor: '#0070f3',
-                            color: 'white',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                        }}
+                        sx={{ borderRadius: 5 }}
                     >
-                        <span>📞</span> Call
-                    </button>
-                </div>
-            </div>
+                        Call
+                    </Button>
+                </Toolbar>
+            </AppBar>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {messages.map((msg) => {
                     const isMe = msg.senderId === user?.$id;
                     
                     if (msg.type === 'call_signal') {
-                        // Only show "Join Call" for the initial offer or if it's a generic signal
-                        // Actually, showing every signal is spammy.
-                        // We should probably hide them or collapse them.
-                        // For MVP, let's just show a "Call started" message if it's an offer.
                         try {
                             const signal = JSON.parse(msg.content || '{}');
                             if (signal.type === 'offer') {
                                 return (
-                                    <div key={msg.$id} style={{ alignSelf: 'center', margin: '10px 0' }}>
-                                        <button
+                                    <Box key={msg.$id} sx={{ alignSelf: 'center', my: 2 }}>
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            startIcon={<CallIcon />}
                                             onClick={() => router.push(`/call/${conversationId}`)}
-                                            style={{
-                                                padding: '10px 20px',
-                                                borderRadius: '20px',
-                                                backgroundColor: '#28a745',
-                                                color: 'white',
-                                                border: 'none',
-                                                cursor: 'pointer'
-                                            }}
+                                            sx={{ borderRadius: 5 }}
                                         >
-                                            📞 Join Call
-                                        </button>
-                                    </div>
+                                            Join Call
+                                        </Button>
+                                    </Box>
                                 );
                             }
-                            return null; // Hide other signals
+                            return null;
                         } catch (e) { return null; }
                     }
 
                     return (
-                        <div 
+                        <Box 
                             key={msg.$id} 
-                            style={{ 
+                            sx={{ 
                                 alignSelf: isMe ? 'flex-end' : 'flex-start',
                                 maxWidth: '70%',
-                                padding: '10px 15px',
-                                borderRadius: '15px',
-                                backgroundColor: isMe ? '#0070f3' : '#f0f0f0',
-                                color: isMe ? 'white' : 'black',
-                                borderBottomRightRadius: isMe ? '5px' : '15px',
-                                borderBottomLeftRadius: isMe ? '15px' : '5px'
+                                p: 1.5,
+                                borderRadius: 2,
+                                bgcolor: isMe ? 'primary.main' : 'grey.200',
+                                color: isMe ? 'primary.contrastText' : 'text.primary',
+                                borderBottomRightRadius: isMe ? 0 : 2,
+                                borderBottomLeftRadius: isMe ? 2 : 0
                             }}
                         >
-                            {msg.content}
-                            <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '5px', textAlign: 'right' }}>
+                            <Typography variant="body1">{msg.content}</Typography>
+                            <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', opacity: 0.7, mt: 0.5 }}>
                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                        </div>
+                            </Typography>
+                        </Box>
                     );
                 })}
                 <div ref={messagesEndRef} />
-            </div>
+            </Box>
 
             {/* Input */}
-            <form onSubmit={handleSend} style={{ padding: '20px', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
-                <input
-                    type="text"
+            <Paper 
+                component="form" 
+                onSubmit={handleSend} 
+                sx={{ p: 2, display: 'flex', alignItems: 'center', borderTop: 1, borderColor: 'divider' }}
+                elevation={0}
+            >
+                <TextField
+                    fullWidth
+                    placeholder="Type a message..."
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Type a message..."
-                    style={{
-                        flex: 1,
-                        padding: '12px',
-                        borderRadius: '20px',
-                        border: '1px solid #ccc',
-                        fontSize: '16px'
-                    }}
+                    variant="outlined"
+                    size="small"
+                    sx={{ mr: 1, '& .MuiOutlinedInput-root': { borderRadius: 5 } }}
                 />
-                <button 
-                    type="submit"
+                <IconButton 
+                    type="submit" 
+                    color="primary" 
                     disabled={!inputText.trim()}
-                    style={{
-                        padding: '10px 20px',
-                        borderRadius: '20px',
-                        backgroundColor: inputText.trim() ? '#0070f3' : '#ccc',
-                        color: 'white',
-                        border: 'none',
-                        cursor: inputText.trim() ? 'pointer' : 'default'
-                    }}
+                    sx={{ bgcolor: inputText.trim() ? 'primary.main' : 'action.disabledBackground', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
                 >
-                    Send
-                </button>
-            </form>
-        </div>
+                    <SendIcon />
+                </IconButton>
+            </Paper>
+        </Box>
     );
 };

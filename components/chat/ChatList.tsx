@@ -2,10 +2,23 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChatService } from '@/lib/services/chat';
-import { Conversations } from '@/types/appwrite';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { UsersService } from '@/lib/services/users';
+import { 
+    List, 
+    ListItem, 
+    ListItemButton, 
+    ListItemAvatar, 
+    Avatar, 
+    ListItemText, 
+    Typography, 
+    Box,
+    CircularProgress,
+    Divider
+} from '@mui/material';
+import GroupIcon from '@mui/icons-material/Group';
+import PersonIcon from '@mui/icons-material/Person';
 
 export const ChatList = () => {
     const { user } = useAuth();
@@ -20,13 +33,12 @@ export const ChatList = () => {
 
     const loadConversations = async () => {
         try {
-            const response = await ChatService.getConversations(user.$id);
+            const response = await ChatService.getConversations(user!.$id);
             // Enrich with other participant's name
             const enriched = await Promise.all(response.rows.map(async (conv: any) => {
                 if (conv.type === 'direct') {
-                    const otherId = conv.participants.find((p: string) => p !== user.$id);
+                    const otherId = conv.participants.find((p: string) => p !== user!.$id);
                     if (otherId) {
-                        // Fetch user profile
                         try {
                             const profile = await UsersService.getProfileById(otherId);
                             return { 
@@ -49,63 +61,44 @@ export const ChatList = () => {
         }
     };
 
-    if (loading) return <div>Loading chats...</div>;
+    if (loading) return <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ padding: '20px', borderBottom: '1px solid #eee' }}>Messages</h2>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="h6" fontWeight="bold">Messages</Typography>
+            </Box>
+            <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 {conversations.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                        No conversations yet. Search for someone to chat with!
-                    </div>
+                    <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+                        <Typography>No conversations yet.</Typography>
+                        <Typography variant="body2">Search for someone to chat with!</Typography>
+                    </Box>
                 ) : (
-                    conversations.map((conv) => (
-                        <Link 
-                            key={conv.$id} 
-                            href={`/chat/${conv.$id}`}
-                            style={{
-                                display: 'flex',
-                                padding: '15px 20px',
-                                borderBottom: '1px solid #f5f5f5',
-                                alignItems: 'center',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s'
-                            }}
-                        >
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                backgroundColor: '#ddd',
-                                marginRight: '15px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '1.2rem'
-                            }}>
-                                {conv.type === 'group' ? '👥' : '👤'}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                                    {conv.name || (conv.type === 'direct' ? conv.otherUserId : 'Group Chat')}
-                                </div>
-                                <div style={{ fontSize: '0.9rem', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {/* We need to fetch last message content or store it in conversation. 
-                                        The schema has lastMessageId. 
-                                        Wait, I added lastMessageText to the schema in my python script?
-                                        Let's check appwrite.config.json.
-                                        I think I removed it in the "robust" update script and only kept lastMessageId.
-                                        So we can't show text without fetching.
-                                        For MVP, just show date.
-                                    */}
-                                    {new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}
-                                </div>
-                            </div>
-                        </Link>
-                    ))
+                    <List>
+                        {conversations.map((conv) => (
+                            <React.Fragment key={conv.$id}>
+                                <ListItem disablePadding>
+                                    <ListItemButton component={Link} href={`/chat/${conv.$id}`}>
+                                        <ListItemAvatar>
+                                            <Avatar>
+                                                {conv.type === 'group' ? <GroupIcon /> : <PersonIcon />}
+                                            </Avatar>
+                                        </ListItemAvatar>
+                                        <ListItemText 
+                                            primary={conv.name || (conv.type === 'direct' ? conv.otherUserId : 'Group Chat')}
+                                            secondary={new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}
+                                            primaryTypographyProps={{ fontWeight: 'medium' }}
+                                            secondaryTypographyProps={{ noWrap: true }}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                                <Divider component="li" />
+                            </React.Fragment>
+                        ))}
+                    </List>
                 )}
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 };

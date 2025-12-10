@@ -32,5 +32,21 @@ export const CallService = {
             duration,
             startedAt: new Date().toISOString() // Approximate start time
         });
+    },
+
+    async getCallHistory(userId: string) {
+        // Fetch calls where user is caller OR receiver
+        // Appwrite currently supports OR queries in newer versions, or we do two queries.
+        // For MVP, let's fetch where user is caller and where user is receiver and merge.
+        const [asCaller, asReceiver] = await Promise.all([
+            tablesDB.listRows(DB_ID, CALL_LOGS_TABLE, [Query.equal('callerId', userId), Query.orderDesc('startedAt'), Query.limit(20)]),
+            tablesDB.listRows(DB_ID, CALL_LOGS_TABLE, [Query.equal('receiverId', userId), Query.orderDesc('startedAt'), Query.limit(20)])
+        ]);
+        
+        const allCalls = [...asCaller.rows, ...asReceiver.rows].sort((a: any, b: any) => 
+            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+        );
+        
+        return allCalls;
     }
 };

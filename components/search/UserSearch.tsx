@@ -6,6 +6,22 @@ import { Users } from '@/types/appwrite';
 import { ChatService } from '@/lib/services/chat';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { 
+    Box, 
+    TextField, 
+    Button, 
+    List, 
+    ListItem, 
+    ListItemText, 
+    ListItemAvatar, 
+    Avatar, 
+    Typography, 
+    Paper,
+    IconButton
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import MessageIcon from '@mui/icons-material/Message';
+import PersonIcon from '@mui/icons-material/Person';
 
 export const UserSearch = () => {
     const [query, setQuery] = useState('');
@@ -43,11 +59,6 @@ export const UserSearch = () => {
     const startChat = async (targetUserId: string) => {
         if (!user) return;
         try {
-            // Check if conversation exists (simplified: just create new for now or check existing)
-            // Ideally we check if a direct chat with these participants exists.
-            // For MVP, let's try to create one. If it fails (duplicate), we catch it or handle it.
-            // But wait, createRow with unique ID will always create a new one.
-            // We should check first.
             const existing = await ChatService.getConversations(user.$id);
             const found = existing.rows.find((c: any) => 
                 c.type === 'direct' && c.participants.includes(targetUserId)
@@ -65,73 +76,57 @@ export const UserSearch = () => {
     };
 
     return (
-        <div style={{ padding: '20px' }}>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                <input
-                    type="text"
+        <Box sx={{ p: 2 }}>
+            <Paper 
+                component="form" 
+                onSubmit={handleSearch} 
+                sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', mb: 3 }}
+            >
+                <TextField
+                    sx={{ ml: 1, flex: 1 }}
+                    placeholder="Search username..."
+                    variant="standard"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search username..."
-                    style={{
-                        flex: 1,
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '1px solid #ccc',
-                        fontSize: '16px'
-                    }}
+                    InputProps={{ disableUnderline: true }}
                 />
-                <button 
-                    type="submit" 
-                    disabled={loading}
-                    style={{
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        backgroundColor: '#0070f3',
-                        color: 'white',
-                        cursor: 'pointer'
-                    }}
-                >
-                    {loading ? '...' : 'Search'}
-                </button>
-            </form>
+                <IconButton type="submit" sx={{ p: '10px' }} aria-label="search" disabled={loading}>
+                    <SearchIcon />
+                </IconButton>
+            </Paper>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <List>
                 {results.map((u) => (
-                    <div 
-                        key={u.$id}
-                        style={{
-                            padding: '15px',
-                            borderRadius: '8px',
-                            backgroundColor: '#f5f5f5',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}
-                    >
-                        <div>
-                            <div style={{ fontWeight: 'bold' }}>{u.displayName || u.username}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#666' }}>@{u.username}</div>
-                        </div>
-                        <button
-                            onClick={() => startChat(u.$id)}
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '20px',
-                                border: '1px solid #0070f3',
-                                backgroundColor: 'transparent',
-                                color: '#0070f3',
-                                cursor: 'pointer'
-                            }}
+                    <Paper key={u.$id} sx={{ mb: 1, overflow: 'hidden' }} variant="outlined">
+                        <ListItem
+                            secondaryAction={
+                                <Button 
+                                    variant="outlined" 
+                                    startIcon={<MessageIcon />}
+                                    onClick={() => startChat(u.$id)}
+                                    size="small"
+                                    sx={{ borderRadius: 5 }}
+                                >
+                                    Message
+                                </Button>
+                            }
                         >
-                            Message
-                        </button>
-                    </div>
+                            <ListItemAvatar>
+                                <Avatar>
+                                    <PersonIcon />
+                                </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={u.displayName || u.username}
+                                secondary={`@${u.username}`}
+                            />
+                        </ListItem>
+                    </Paper>
                 ))}
                 {results.length === 0 && query && !loading && (
-                    <div style={{ textAlign: 'center', color: '#666' }}>No users found</div>
+                    <Typography align="center" color="text.secondary">No users found</Typography>
                 )}
-            </div>
-        </div>
+            </List>
+        </Box>
     );
 };

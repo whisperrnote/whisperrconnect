@@ -6,8 +6,9 @@ import { useAuth } from '@/lib/auth';
 import { ChatService } from '@/lib/services/chat';
 import { client } from '@/lib/appwrite/client';
 import { APPWRITE_CONFIG } from '@/lib/appwrite/config';
-import { SignalData } from '@/types/p2p';
 import { useRouter } from 'next/navigation';
+import { Box, IconButton, Typography, Fab } from '@mui/material';
+import CallEndIcon from '@mui/icons-material/CallEnd';
 
 export const CallInterface = ({ conversationId, isCaller }: { conversationId: string, isCaller: boolean }) => {
     const { user } = useAuth();
@@ -20,7 +21,6 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
     useEffect(() => {
         if (!user) return;
 
-        // Initialize WebRTC Manager
         rtcManager.current = new WebRTCManager({
             onTrack: (stream) => {
                 if (remoteVideoRef.current) {
@@ -30,7 +30,6 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
             onData: (data) => console.log('Data received:', data),
             onStateChange: (state) => setStatus(state),
             onSignal: async (signal) => {
-                // Send signal via ChatService
                 await ChatService.sendMessage(
                     conversationId,
                     user.$id,
@@ -40,18 +39,11 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
             }
         });
 
-        // Start Local Stream
         rtcManager.current.initializeLocalStream(true, true).then((stream) => {
             if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream;
             }
-            // If caller, create offer after stream is ready
             if (isCaller) {
-                // We need the other participant's ID.
-                // For now, we broadcast to the conversation.
-                // The receiver will pick it up.
-                // But createOffer needs a targetId.
-                // We can fetch conversation to get participants.
                 ChatService.getConversations(user.$id).then(res => {
                     const conv = res.rows.find((c: any) => c.$id === conversationId);
                     if (conv) {
@@ -64,7 +56,6 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
             }
         });
 
-        // Subscribe to Signaling Messages
         const unsubscribe = client.subscribe(
             `databases.${APPWRITE_CONFIG.DATABASES.CHAT}.tables.${APPWRITE_CONFIG.TABLES.CHAT.MESSAGES}.rows`,
             (response: any) => {
@@ -73,7 +64,6 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
                     if (msg.conversationId === conversationId && msg.type === 'call_signal' && msg.senderId !== user.$id) {
                         try {
                             const signal = JSON.parse(msg.content);
-                            // Only handle signals meant for us or broadcast
                             if (signal.target === user.$id) {
                                 rtcManager.current?.handleSignal(signal);
                             }
@@ -97,87 +87,76 @@ export const CallInterface = ({ conversationId, isCaller }: { conversationId: st
     };
 
     return (
-        <div style={{ 
+        <Box sx={{ 
             position: 'fixed', 
             top: 0, left: 0, right: 0, bottom: 0, 
-            backgroundColor: '#000', 
-            zIndex: 1000,
+            bgcolor: 'black', 
+            zIndex: 1300,
             display: 'flex',
             flexDirection: 'column'
         }}>
-            <div style={{ flex: 1, position: 'relative' }}>
+            <Box sx={{ flex: 1, position: 'relative' }}>
                 {/* Remote Video */}
-                <video 
+                <Box 
+                    component="video"
                     ref={remoteVideoRef} 
                     autoPlay 
                     playsInline 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />
                 
                 {/* Local Video */}
-                <div style={{ 
+                <Box sx={{ 
                     position: 'absolute', 
-                    bottom: '100px', 
-                    right: '20px', 
-                    width: '120px', 
-                    height: '160px', 
-                    backgroundColor: '#333',
-                    borderRadius: '10px',
+                    bottom: 100, 
+                    right: 20, 
+                    width: 120, 
+                    height: 160, 
+                    bgcolor: 'grey.900',
+                    borderRadius: 2,
                     overflow: 'hidden',
-                    border: '2px solid white'
+                    border: '2px solid white',
+                    boxShadow: 3
                 }}>
-                    <video 
+                    <Box 
+                        component="video"
                         ref={localVideoRef} 
                         autoPlay 
                         playsInline 
                         muted 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />
-                </div>
+                </Box>
 
                 {/* Status Overlay */}
-                <div style={{
+                <Box sx={{
                     position: 'absolute',
-                    top: '20px',
+                    top: 40,
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    bgcolor: 'rgba(0,0,0,0.5)',
                     color: 'white',
-                    padding: '5px 15px',
-                    borderRadius: '20px'
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 4
                 }}>
-                    {status}
-                </div>
-            </div>
+                    <Typography variant="body2">{status}</Typography>
+                </Box>
+            </Box>
 
             {/* Controls */}
-            <div style={{ 
-                height: '80px', 
+            <Box sx={{ 
+                height: 100, 
                 display: 'flex', 
                 justifyContent: 'center', 
                 alignItems: 'center', 
-                gap: '20px',
-                backgroundColor: '#1a1a1a'
+                gap: 2,
+                bgcolor: 'rgba(0,0,0,0.8)'
             }}>
-                <button 
-                    onClick={endCall}
-                    style={{
-                        width: '50px',
-                        height: '50px',
-                        borderRadius: '50%',
-                        backgroundColor: '#ff4444',
-                        border: 'none',
-                        color: 'white',
-                        fontSize: '20px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    📞
-                </button>
-            </div>
-        </div>
+                <Fab color="error" onClick={endCall} aria-label="end call">
+                    <CallEndIcon />
+                </Fab>
+            </Box>
+        </Box>
     );
 };
