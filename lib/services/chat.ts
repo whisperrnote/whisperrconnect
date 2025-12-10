@@ -33,7 +33,7 @@ export const ChatService = {
         ]);
     },
 
-    async sendMessage(conversationId: string, senderId: string, content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' = 'text', attachments: string[] = []) {
+    async sendMessage(conversationId: string, senderId: string, content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'call_signal' = 'text', attachments: string[] = []) {
         const now = new Date().toISOString();
         
         // 1. Create Message

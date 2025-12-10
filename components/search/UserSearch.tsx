@@ -31,7 +31,7 @@ export const UserSearch = () => {
                     } catch (e) {}
                 }
                 return true;
-            }) as Users[];
+            }) as unknown as Users[];
             setResults(filtered);
         } catch (error) {
             console.error('Search failed:', error);

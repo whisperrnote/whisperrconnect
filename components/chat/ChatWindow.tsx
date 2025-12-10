@@ -31,7 +31,7 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
         try {
             const response = await ChatService.getMessages(conversationId);
             // Appwrite returns newest first, so reverse for display
-            setMessages(response.rows.reverse() as Messages[]);
+            setMessages(response.rows.reverse() as unknown as Messages[]);
         } catch (error) {
             console.error('Failed to load messages:', error);
         } finally {
