@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ChatService } from '@/lib/services/chat';
 import { useAuth } from '@/lib/auth';
+import { UsersService } from '@/lib/services/users';
 import { Messages } from '@/types/appwrite';
 import { useRouter } from 'next/navigation';
 import { 
