@@ -1,0 +1,43 @@
+export const ECOSYSTEM_APPS = [
+  { 
+    name: 'WhisperrNote', 
+    shortName: 'Note',
+    icon: '📝', 
+    color: '#6366f1', 
+    description: 'Smart notes',
+    url: 'http://localhost:3000',
+  },
+  { 
+    name: 'WhisperrFlow', 
+    shortName: 'Flow',
+    icon: '✅', 
+    color: '#10b981', 
+    description: 'Flow-based task navigation', 
+    url: 'http://localhost:3002',
+  },
+  { 
+    name: 'WhisperrConnect', 
+    shortName: 'Connect',
+    icon: '💬', 
+    color: '#ec4899', 
+    description: 'Chat & Calls',
+    active: true,
+    url: 'http://localhost:3003',
+  },
+  { 
+    name: 'WhisperrKeep', 
+    shortName: 'Keep',
+    icon: '🔐', 
+    color: '#8b5cf6', 
+    description: 'Password manager',
+    url: 'http://localhost:3001',
+  },
+  { 
+    name: 'WhisperrID', 
+    shortName: 'ID',
+    icon: '🛡️', 
+    color: '#ef4444', 
+    description: 'Identity',
+    url: 'http://localhost:3004',
+  },
+];

@@ -38,32 +38,77 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         palette: {
           mode,
           primary: {
-            main: mode === 'dark' ? '#90caf9' : '#1976d2',
+            main: '#FFC700', // Sun yellow
+            light: '#FFCF40',
+            dark: '#D6A300',
+            contrastText: '#1a1a1a',
           },
           secondary: {
-            main: mode === 'dark' ? '#f48fb1' : '#dc004e',
+            main: '#3d2f26', // Muted brown
+            light: '#6b5b4f',
+            dark: '#1a120e',
+            contrastText: '#ffffff',
           },
           background: {
-            default: mode === 'dark' ? '#121212' : '#f5f5f5',
-            paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
+            default: mode === 'light' ? '#f8f8f8' : '#0f0f0f',
+            paper: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          },
+          text: {
+            primary: mode === 'light' ? '#0f0a08' : '#faf8f6',
+            secondary: mode === 'light' ? '#3d2f26' : '#c4b5a8',
+          },
+          divider: mode === 'light' ? '#e8e8e8' : '#2a2a2a',
+        },
+        shape: {
+          borderRadius: 16,
+        },
+        typography: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+          button: {
+            textTransform: 'none',
+            fontWeight: 600,
           },
         },
         components: {
             MuiAppBar: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: mode === 'dark' ? '#1e1e1e' : '#ffffff',
-                        color: mode === 'dark' ? '#ffffff' : '#000000',
+                        backgroundColor: mode === 'light' ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 15, 15, 0.85)',
+                        color: mode === 'light' ? '#0f0a08' : '#faf8f6',
+                        backdropFilter: 'blur(24px)',
+                        borderBottom: `1px solid ${mode === 'light' ? '#e8e8e8' : '#2a2a2a'}`,
+                        boxShadow: 'none',
                     }
                 }
             },
             MuiDrawer: {
                 styleOverrides: {
                     paper: {
-                        backgroundColor: mode === 'dark' ? '#1e1e1e' : '#ffffff',
-                        borderRight: `1px solid ${mode === 'dark' ? '#333' : '#e0e0e0'}`,
+                        backgroundColor: mode === 'light' ? '#f8f8f8' : '#0f0f0f',
+                        borderRight: `1px solid ${mode === 'light' ? '#e8e8e8' : '#2a2a2a'}`,
                     }
                 }
+            },
+            MuiButton: {
+              styleOverrides: {
+                root: {
+                  borderRadius: 12,
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: 'none',
+                  },
+                },
+                containedPrimary: {
+                  color: '#1a1a1a',
+                }
+              }
+            },
+            MuiPaper: {
+              styleOverrides: {
+                root: {
+                  backgroundImage: 'none',
+                }
+              }
             }
         }
       }),
