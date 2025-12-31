@@ -1,51 +1,56 @@
 :root {
-  /* Solar (Light) Theme */
-  --void: #FAF8F6;
-  --matter: #EADDD3;
-  --matter-highlight: #D8C8BD;
-  --tungsten: #FFC107;
-  --shadow-indigo: 26, 35, 126;
+  /* THE VOID (Backgrounds) */
+  --color-void: #000000;
+  /* Pure OLED Black */
+  --color-surface: #0A0A0A;
+  /* Elevated Surface */
+  --color-surface-2: #141414;
+  /* Hover States */
 
-  --background: var(--void);
-  --foreground: #1B1C20;
-  --card: var(--matter);
-  --card-foreground: #1B1C20;
-  --primary: var(--tungsten);
-  --primary-foreground: #1B1C20;
-  --border: rgba(26, 35, 126, 0.1);
-  --ring: var(--tungsten);
+  /* THE STRUCTURE (Text & Icons) */
+  --color-titanium: #F2F2F2;
+  /* Primary Text */
+  --color-gunmetal: #A1A1AA;
+  /* Secondary Text */
+  --color-carbon: #404040;
+  /* Disabled */
+
+  /* THE PULSE (Brand Accent) */
+  --color-electric: #00F0FF;
+  /* Primary Brand - Cybernetic Teal */
+
+  /* THE BORDERS */
+  --border-subtle: #222222;
+  --border-active: #404040;
+
+  --background: var(--color-void);
+  --foreground: var(--color-titanium);
+  --primary: var(--color-electric);
+  --primary-foreground: var(--color-void);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-titanium);
+  --border: var(--border-subtle);
+  --ring: var(--color-electric);
 
   /* Organic Realism: Radii */
   --radius-micro: 12px;
   --radius-macro: 24px;
   --radius-mega: 32px;
   --radius: var(--radius-micro);
-
-  /* Organic Realism: Shadows (Dual-Layer Adire Indigo) */
-  --shadow-resting: 0px 2px 4px rgba(var(--shadow-indigo), 0.2), 0px 8px 16px rgba(var(--shadow-indigo), 0.1);
-  --shadow-hover: 0px 4px 8px rgba(var(--shadow-indigo), 0.4), 0px 12px 24px rgba(var(--shadow-indigo), 0.2);
-  --shadow-floating: 0px 8px 16px rgba(var(--shadow-indigo), 0.3), 0px 24px 48px rgba(0, 0, 0, 0.2);
-
-  /* Surface Physics: Ceramic Highlight */
-  --shadow-ceramic: inset 0px 1px 0px rgba(255, 193, 7, 0.2);
 }
 
 .dark {
-  /* Void (Dark) Theme */
-  --void: #1B1C20;
-  --matter: #2D2421;
-  --matter-highlight: #484A3B;
-
-  --background: var(--void);
-  --foreground: #FAF8F6;
-  --card: var(--matter);
-  --card-foreground: #FAF8F6;
-  --border: #3D3D3D;
-
-  --shadow-resting: 0px 2px 4px rgba(0, 0, 0, 0.4), 0px 8px 16px rgba(var(--shadow-indigo), 0.2);
-  --shadow-hover: 0px 4px 8px rgba(0, 0, 0, 0.6), 0px 12px 24px rgba(var(--shadow-indigo), 0.4);
-  --shadow-floating: 0px 8px 16px rgba(0, 0, 0, 0.8), 0px 24px 48px rgba(var(--shadow-indigo), 0.6);
+  /* Dark is the only mode */
+  color-scheme: dark;
 }
+
+/* Glassmorphism 2.0 */
+.glass-panel {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 
 html,
 body {
