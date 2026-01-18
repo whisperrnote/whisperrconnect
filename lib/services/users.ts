@@ -21,23 +21,43 @@ export const UsersService = {
         }
     },
 
-    async updateProfile(userId: string, data: { bio?: string; avatarUrl?: string; appsActive?: string[] }) {
-        // Note: In a real scenario, we'd need the document ID, which might match userId or be separate.
-        // Assuming userId maps to the document ID for simplicity, or we query by userId first.
-        // Here we assume the row ID is the user ID or we have a way to get it.
-        // For now, let's assume we need to find the row first if we don't have the ID.
-        
-        // This is a simplification. In production, we'd store the row ID in the session or fetch it.
+    async isUsernameAvailable(username: string) {
+        if (!username) return false;
+        const result = await tablesDB.listRows(DB_ID, USERS_TABLE, [
+            Query.equal('username', username.toLowerCase())
+        ]);
+        return result.total === 0;
+    },
+
+    async updateProfile(userId: string, data: { username?: string; bio?: string; avatarUrl?: string; appsActive?: string[] }) {
+        // If updating username, check for availability first
+        if (data.username) {
+            const available = await this.isUsernameAvailable(data.username);
+            if (!available) {
+                // Check if it's the current user's own username
+                const currentProfile = await this.getProfileById(userId);
+                if (currentProfile?.username !== data.username.toLowerCase()) {
+                    throw new Error('Username already taken');
+                }
+            }
+            data.username = data.username.toLowerCase();
+        }
         return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, data);
     },
 
     async createProfile(userId: string, username: string, email: string) {
+        // Double check availability before creation
+        const available = await this.isUsernameAvailable(username);
+        if (!available) {
+            throw new Error('Username already taken');
+        }
+
         return await tablesDB.createRow(
             DB_ID, 
             USERS_TABLE, 
             userId, 
             {
-                username,
+                username: username.toLowerCase(),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             },

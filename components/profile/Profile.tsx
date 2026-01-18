@@ -19,6 +19,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useRouter } from 'next/navigation';
+import { EditProfileModal } from './EditProfileModal';
 
 interface ProfileProps {
     username?: string;
@@ -31,6 +32,7 @@ export const Profile = ({ username }: ProfileProps) => {
     const [loading, setLoading] = useState(true);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const isOwnProfile = currentUser && (
         username === profile?.username || 

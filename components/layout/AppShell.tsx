@@ -44,6 +44,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
 
+    const isProfilePage = pathname === '/profile' || pathname?.startsWith('/u/');
+
     const navItems = [
         { label: 'Home', href: '/', icon: <HomeIcon /> },
         { label: 'Chats', href: '/chats', icon: <ChatIcon /> },
@@ -77,11 +79,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         variant="h6" 
                         noWrap 
                         component="div" 
+                        onClick={() => router.push('/')}
                         sx={{ 
                             fontWeight: 800, 
                             color: '#00F0FF',
                             fontFamily: 'var(--font-space-grotesk)',
-                            letterSpacing: '-0.02em'
+                            letterSpacing: '-0.02em',
+                            cursor: 'pointer'
                         }}
                     >
                         WhisperrConnect
@@ -125,7 +129,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             </AppBar>
 
             {/* Desktop Sidebar */}
-            {!isMobile && (
+            {!isMobile && !isProfilePage && (
                 <Drawer
                     variant="permanent"
                     sx={{
@@ -191,14 +195,18 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     overflow: 'hidden', 
                     position: 'relative', 
                     pt: '64px',
-                    bgcolor: '#000000'
+                    bgcolor: '#000000',
+                    transition: 'all 0.3s ease-in-out'
                 }}
             >
                 <Box sx={{ 
                     height: '100%', 
                     p: { xs: 2, md: 3 },
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    maxWidth: isProfilePage ? '1200px' : 'auto',
+                    mx: isProfilePage ? 'auto' : 'unset'
                 }}>
+
                     <Paper
                         elevation={0}
                         sx={{
