@@ -83,7 +83,7 @@ export const EditProfileModal = ({ open, onClose, profile, onUpdate }: EditProfi
                 username,
                 bio,
                 displayName
-            } as any);
+            });
             onUpdate();
             onClose();
         } catch (err: any) {

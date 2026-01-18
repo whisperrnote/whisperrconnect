@@ -29,7 +29,7 @@ export const UsersService = {
         return result.total === 0;
     },
 
-    async updateProfile(userId: string, data: { username?: string; bio?: string; avatarUrl?: string; appsActive?: string[] }) {
+    async updateProfile(userId: string, data: { username?: string; displayName?: string; bio?: string; avatarUrl?: string; appsActive?: string[] }) {
         // If updating username, check for availability first
         if (data.username) {
             const available = await this.isUsernameAvailable(data.username);

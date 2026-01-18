@@ -121,7 +121,12 @@ export const Profile = ({ username }: ProfileProps) => {
                         <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                             {isOwnProfile ? (
                                 <>
-                                    <Button variant="outlined" startIcon={<EditIcon />} sx={{ borderRadius: 5 }}>
+                                    <Button 
+                                        variant="outlined" 
+                                        startIcon={<EditIcon />} 
+                                        sx={{ borderRadius: 5 }}
+                                        onClick={() => setIsEditModalOpen(true)}
+                                    >
                                         Edit Profile
                                     </Button>
                                     <Button variant="outlined" startIcon={<SettingsIcon />} sx={{ borderRadius: 5 }}>
@@ -169,6 +174,13 @@ export const Profile = ({ username }: ProfileProps) => {
                     <Typography variant="body2" color="text.secondary">Following</Typography>
                 </Paper>
             </Stack>
+
+            <EditProfileModal 
+                open={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                profile={profile}
+                onUpdate={loadProfile}
+            />
         </Box>
     );
 };
