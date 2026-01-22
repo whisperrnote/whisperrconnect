@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export const viewport = {
 import { AuthOverlay } from '@/components/auth/AuthOverlay';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { EcosystemClient } from '@/components/ecosystem/EcosystemClient';
+import { Suspense } from 'react';
 
 export default function RootLayout({
   children,
@@ -49,7 +51,9 @@ export default function RootLayout({
         <EcosystemClient nodeId="connect" />
         <ThemeProvider>
           <AuthOverlay />
-          {children}
+          <Suspense fallback={null}>
+            {children}
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
