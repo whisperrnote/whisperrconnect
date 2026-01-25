@@ -21,7 +21,9 @@ import {
     Toolbar,
     Menu,
     MenuItem,
-    ListItemIcon
+    ListItemIcon,
+    Avatar,
+    Stack
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/SendOutlined';
 import CallIcon from '@mui/icons-material/CallOutlined';
