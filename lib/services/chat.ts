@@ -7,6 +7,10 @@ const CONV_TABLE = APPWRITE_CONFIG.TABLES.CHAT.CONVERSATIONS;
 const MSG_TABLE = APPWRITE_CONFIG.TABLES.CHAT.MESSAGES;
 
 export const ChatService = {
+    async getConversationById(conversationId: string) {
+        return await tablesDB.getRow(DB_ID, CONV_TABLE, conversationId);
+    },
+
     async getConversations(userId: string) {
         // Query for conversations where the user is a participant
         // For self-chats, we ensure they are always findable

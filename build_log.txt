@@ -1,0 +1,11 @@
+
+> whisperrconnect@0.1.0 build /home/nathfavour/code/whisperrnote/whisperrconnect
+> next build
+
+   ▲ Next.js 16.0.8 (Turbopack)
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.9s
+   Running TypeScript ...
