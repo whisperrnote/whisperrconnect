@@ -51,7 +51,9 @@ export enum MessagesType {
 export enum ConversationsType {
     DIRECT = "direct",
     GROUP = "group",
-    BROADCAST = "broadcast"
+    CHANNEL = "channel",
+    BROADCAST = "broadcast",
+    COMMUNITY = "community"
 }
 
 export enum ContactsRelationship {
@@ -69,9 +71,16 @@ export enum FollowsStatus {
     BLOCKED = "blocked"
 }
 
-export enum FollowsScope {
-    FOLLOW = "follow",
-    CONNECTION = "connection"
+export enum AppActivityStatus {
+    ONLINE = "online",
+    OFFLINE = "offline",
+    AWAY = "away",
+    BUSY = "busy"
+}
+
+export enum CallLinksType {
+    AUDIO = "audio",
+    VIDEO = "video"
 }
 
 export enum CallLogsType {
@@ -80,33 +89,15 @@ export enum CallLogsType {
 }
 
 export enum CallLogsStatus {
-    COMPLETED = "completed",
     MISSED = "missed",
-    REJECTED = "rejected",
-    BUSY = "busy"
+    COMPLETED = "completed",
+    DECLINED = "declined",
+    ONGOING = "ongoing"
 }
 
 export enum MomentsType {
-    TEXT = "text",
     IMAGE = "image",
-    VIDEO = "video",
-    AUDIO = "audio",
-    LINK = "link",
-    POLL = "poll"
-}
-
-export enum MomentsVisibility {
-    PUBLIC = "public",
-    FOLLOWERS = "followers",
-    PRIVATE = "private",
-    CIRCLE = "circle"
-}
-
-export enum InteractionsType {
-    LIKE = "like",
-    COMMENT = "comment",
-    SHARE = "share",
-    REACTION = "reaction"
+    VIDEO = "video"
 }
 
 export type Users = Models.Row & {
@@ -128,10 +119,10 @@ export type Notes = Models.Row & {
     parentNoteId: string | null;
     title: string | null;
     content: string | null;
-    tags: string[];
-    comments: string[];
-    extensions: string[];
-    collaborators: string[];
+    tags: string[] | null;
+    comments: string[] | null;
+    extensions: string[] | null;
+    collaborators: string[] | null;
     metadata: string | null;
     attachments: string | null;
     format: string | null;
@@ -140,7 +131,7 @@ export type Notes = Models.Row & {
 export type Tags = Models.Row & {
     id: string | null;
     name: string | null;
-    notes: string[];
+    notes: string[] | null;
     createdAt: string | null;
     color: string | null;
     description: string | null;
@@ -157,7 +148,7 @@ export type ApiKeys = Models.Row & {
     createdAt: string | null;
     lastUsed: string | null;
     expiresAt: string | null;
-    scopes: string[];
+    scopes: string[] | null;
     lastUsedIp: string | null;
     keyHash: string | null;
 }
@@ -294,7 +285,7 @@ export type Credentials = Models.Row & {
     cardPIN: string | null;
     cardType: string | null;
     folderId: string | null;
-    tags: string[];
+    tags: string[] | null;
     customFields: string | null;
     faviconUrl: string | null;
     isFavorite: boolean;
@@ -315,7 +306,7 @@ export type Identities = Models.Row & {
     publicKey: string | null;
     counter: number;
     passkeyBlob: string | null;
-    transports: string[];
+    transports: string[] | null;
     aaguid: string | null;
     deviceInfo: string | null;
     isPrimary: boolean;
@@ -363,7 +354,7 @@ export type TotpSecrets = Models.Row & {
     period: number;
     url: string | null;
     folderId: string | null;
-    tags: string[];
+    tags: string[] | null;
     isFavorite: boolean;
     isDeleted: boolean;
     deletedAt: string | null;
@@ -387,26 +378,46 @@ export type Keychain = Models.Row & {
 export type Messages = Models.Row & {
     conversationId: string;
     senderId: string;
-    type: MessagesType;
-    content: string | null;
-    attachments: string[];
-    replyTo: string | null;
-    readBy: string[];
     createdAt: string;
     updatedAt: string;
+    type: MessagesType;
+    content: string | null;
+    attachments: string[] | null;
+    replyTo: string | null;
+    readBy: string[] | null;
 }
 
 export type Conversations = Models.Row & {
     type: ConversationsType;
-    participants: string[];
-    admins: string[];
     name: string | null;
-    avatar: string | null;
     lastMessageId: string | null;
     lastMessageAt: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+    creatorId: string;
+    participants: string[] | null;
+    admins: string[] | null;
+    description: string | null;
+    avatarUrl: string | null;
+    avatarFileId: string | null;
+    avatar: string | null;
+    participantCount: number;
+    maxParticipants: number;
+    isEncrypted: boolean;
+    encryptionVersion: string | null;
     encryptionKey: string | null;
-    createdAt: string;
-    updatedAt: string;
+    isPinned: string[];
+    isMuted: string[];
+    isArchived: string[];
+    lastMessageText: string | null;
+    lastMessageSenderId: string | null;
+    unreadCount: string | null;
+    settings: string | null;
+    isPublic: boolean;
+    inviteLink: string | null;
+    inviteLinkExpiry: string | null;
+    category: string | null;
+    tags: string[];
     contextType: string | null;
     contextId: string | null;
 }
@@ -434,20 +445,57 @@ export type Users = Models.Row & {
     walletAddress: string | null;
     createdAt: string | null;
     updatedAt: string | null;
-    appsActive: string[];
-    publicKey: string | null;
-    privacySettings: string;
 }
 
 export type Follows = Models.Row & {
     followerId: string;
     followingId: string;
     status: FollowsStatus;
-    scope: FollowsScope;
-    type: string;
-    isMuted: boolean;
     isCloseFriend: boolean;
+    notificationsEnabled: boolean;
+    createdAt: string | null;
+}
+
+export type AppActivity = Models.Row & {
+    userId: string;
+    status: AppActivityStatus;
+    lastSeen: string | null;
+    customStatus: string | null;
+}
+
+export type CallLinks = Models.Row & {
+    userId: string;
+    conversationId: string | null;
+    code: string;
+    type: CallLinksType;
+    url: string | null;
+    expiresAt: string | null;
+}
+
+export type Interactions = Models.Row & {
+    messageId: string;
+    userId: string;
+    emoji: string;
     createdAt: string;
+}
+
+export type CallLogs = Models.Row & {
+    callerId: string;
+    receiverId: string | null;
+    conversationId: string | null;
+    type: CallLogsType;
+    status: CallLogsStatus;
+    duration: number;
+    startedAt: string;
+}
+
+export type Moments = Models.Row & {
+    userId: string;
+    fileId: string;
+    type: MomentsType;
+    caption: string | null;
+    createdAt: string;
+    expiresAt: string;
 }
 
 export type FocusSessions = Models.Row & {
@@ -497,63 +545,10 @@ export type Tasks = Models.Row & {
     priority: string;
     dueDate: string | null;
     recurrenceRule: string | null;
-    tags: string[];
-    assigneeIds: string[];
-    attachmentIds: string[];
+    tags: string[] | null;
+    assigneeIds: string[] | null;
+    attachmentIds: string[] | null;
     eventId: string | null;
     userId: string;
     parentId: string | null;
-}
-
-export type CallLogs = Models.Row & {
-    callerId: string;
-    receiverId: string;
-    type: CallLogsType;
-    status: CallLogsStatus;
-    duration: number | null;
-    startedAt: string;
-    endedAt: string | null;
-}
-
-export type AppActivity = Models.Row & {
-    userId: string;
-    appId: string;
-    lastActive: string;
-    status: string;
-}
-
-export type CallLinks = Models.Row & {
-    slug: string;
-    creatorId: string;
-    conversationId: string | null;
-    scheduledAt: string | null;
-    recurrence: string | null;
-    expiresAt: string | null;
-    contextType: string | null;
-    contextId: string | null;
-    settings: string;
-    createdAt: string;
-}
-
-export type Moments = Models.Row & {
-    creatorId: string;
-    type: MomentsType;
-    content: string | null;
-    mediaIds: string[];
-    visibility: MomentsVisibility;
-    replyToId: string | null;
-    repostOfId: string | null;
-    topics: string[];
-    stats: string;
-    createdAt: string;
-    expiresAt: string | null;
-}
-
-export type Interactions = Models.Row & {
-    type: InteractionsType;
-    momentId: string;
-    userId: string;
-    content: string | null;
-    emoji: string | null;
-    createdAt: string;
 }
