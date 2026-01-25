@@ -42,6 +42,9 @@ import MoreVertIcon from '@mui/icons-material/MoreVertOutlined';
 import InfoIcon from '@mui/icons-material/InfoOutlined';
 import ShieldIcon from '@mui/icons-material/ShieldOutlined';
 import BookmarkIcon from '@mui/icons-material/BookmarkOutlined';
+import GroupIcon from '@mui/icons-material/GroupWorkOutlined';
+import PersonIcon from '@mui/icons-material/PersonOutlined';
+import DeleteIcon from '@mui/icons-material/DeleteOutlineOutlined';
 
 export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     const { user } = useAuth();
