@@ -32,11 +32,24 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useColorMode } from '@/components/providers/ThemeProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { fetchProfilePreview, getCachedProfilePreview } from '@/lib/profile-preview';
+import { getUserProfilePicId } from '@/lib/user-utils';
+import { useAuth } from '@/lib/auth';
+import {
+    Avatar,
+    Menu,
+    MenuItem,
+    Divider,
+    Stack
+} from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const drawerWidth = 280;
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
+    const { user, logout } = useAuth();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const theme = useTheme();
@@ -44,6 +57,39 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [profileUrl, setProfileUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        const profilePicId = getUserProfilePicId(user);
+        const cached = getCachedProfilePreview(profilePicId || undefined);
+        if (cached !== undefined && mounted) {
+            setProfileUrl(cached ?? null);
+        }
+
+        const fetchPreview = async () => {
+            try {
+                if (profilePicId) {
+                    const url = await fetchProfilePreview(profilePicId, 64, 64);
+                    if (mounted) setProfileUrl(url as unknown as string);
+                } else if (mounted) setProfileUrl(null);
+            } catch (err) {
+                if (mounted) setProfileUrl(null);
+            }
+        };
+
+        fetchPreview();
+        return () => { mounted = false; };
+    }, [user]);
+
+    const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+        setAnchorEl(null);
+    };
 
     const isEmbedded = useMemo(() => searchParams?.get('is_embedded') === 'true', [searchParams]);
     const isProfilePage = pathname === '/profile' || pathname?.startsWith('/u/');
@@ -147,9 +193,102 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         <IconButton onClick={colorMode.toggleColorMode} sx={{ color: 'text.secondary' }}>
                             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                         </IconButton>
+
+                        <IconButton onClick={handleProfileClick} sx={{ 
+                            p: 0.5,
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            '&:hover': { borderColor: 'rgba(0, 240, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.05)' }
+                        }}>
+                            <Avatar
+                                src={profileUrl || undefined}
+                                sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '10px',
+                                    bgcolor: '#0A0A0A',
+                                    color: '#00F0FF',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {user?.name ? user.name[0].toUpperCase() : 'U'}
+                            </Avatar>
+                        </IconButton>
                     </Box>
                 </Toolbar>
             </AppBar>
+
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleCloseMenu}
+                PaperProps={{
+                    sx: {
+                        mt: 1.5,
+                        minWidth: 240,
+                        bgcolor: 'rgba(10, 10, 10, 0.95)',
+                        backdropFilter: 'blur(25px) saturate(180%)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                        backgroundImage: 'none',
+                        color: 'white'
+                    }
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+                {user && (
+                    <Box sx={{ px: 2.5, py: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar 
+                            src={profileUrl || undefined}
+                            sx={{ 
+                                width: 40, 
+                                height: 40, 
+                                bgcolor: 'rgba(0, 240, 255, 0.1)',
+                                color: 'primary.main',
+                                borderRadius: '12px',
+                                fontWeight: 900
+                            }}
+                        >
+                            {user.name ? user.name[0].toUpperCase() : 'U'}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 800, color: 'white' }}>
+                                {user.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {user.email}
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
+                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
+                <MenuItem 
+                    onClick={() => {
+                        handleCloseMenu();
+                        const domain = process.env.NEXT_PUBLIC_DOMAIN || 'whisperrnote.space';
+                        const authSub = process.env.NEXT_PUBLIC_AUTH_SUBDOMAIN || 'accounts';
+                        window.location.href = `https://${authSub}.${domain}/settings?source=${encodeURIComponent(window.location.origin)}`;
+                    }}
+                    sx={{ py: 1.5, px: 2.5, gap: 1.5 }}
+                >
+                    <SettingsIcon sx={{ fontSize: 18, color: "rgba(255, 255, 255, 0.6)" }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Account Settings</Typography>
+                </MenuItem>
+                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
+                <MenuItem
+                    onClick={async () => {
+                        handleCloseMenu();
+                        await logout();
+                    }}
+                    sx={{ py: 1.5, px: 2.5, gap: 1.5, color: '#FF4D4D' }}
+                >
+                    <LogoutIcon sx={{ fontSize: 18 }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>Logout</Typography>
+                </MenuItem>
+            </Menu>
 
             {/* Desktop Sidebar */}
             {!isMobile && !isProfilePage && (

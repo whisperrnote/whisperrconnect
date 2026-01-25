@@ -12,6 +12,14 @@ export const realtime = new Realtime(client);
 
 export { client };
 
+export function getFilePreview(bucketId: string, fileId: string, width: number = 64, height: number = 64) {
+    return storage.getFilePreview(bucketId, fileId, width, height);
+}
+
+export function getProfilePicturePreview(fileId: string, width: number = 64, height: number = 64) {
+    return getFilePreview("profile_pictures", fileId, width, height);
+}
+
 // --- USER SESSION ---
 
 export async function getCurrentUser(): Promise<any | null> {
