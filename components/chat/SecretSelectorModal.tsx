@@ -9,6 +9,7 @@ import {
     Button,
     List,
     ListItem,
+    ListItemButton,
     ListItemText,
     ListItemIcon,
     Typography,
@@ -151,9 +152,8 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
                                 </Typography>
                             ) : (
                                 filteredItems.map((item) => (
-                                    <ListItem
+                                    <ListItemButton
                                         key={item.$id}
-                                        component="div"
                                         disabled={tab === 0 && !isSelf}
                                         onClick={() => handleSelect(item, tab === 0 ? 'secret' : 'totp')}
                                         sx={{
@@ -175,7 +175,7 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
                                         {tab === 0 && !isSelf && (
                                             <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700 }}>Self-only</Typography>
                                         )}
-                                    </ListItem>
+                                    </ListItemButton>
                                 ))
                             )}
                         </List>
