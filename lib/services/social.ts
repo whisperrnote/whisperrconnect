@@ -1,4 +1,4 @@
-import { ID, Query } from 'appwrite';
+import { ID, Query, Permission, Role } from 'appwrite';
 import { tablesDB, realtime } from '../appwrite/client';
 import { APPWRITE_CONFIG } from '../appwrite/config';
 
@@ -9,13 +9,10 @@ const INTERACTIONS_TABLE = APPWRITE_CONFIG.TABLES.CHAT.INTERACTIONS;
 
 export const SocialService = {
     async getFeed(userId: string) {
-        // In a real app, this would be a complex query or cloud function.
-        // For now, we fetch public moments or moments from followed users.
-        // Since Appwrite queries are limited, we might just fetch recent public moments.
+        // Fetch public moments or moments from followed users
         return await tablesDB.listRows(DB_ID, MOMENTS_TABLE, [
-            Query.equal('visibility', 'public'),
             Query.orderDesc('createdAt'),
-            Query.limit(20)
+            Query.limit(50)
         ]);
     },
 
@@ -36,14 +33,25 @@ export const SocialService = {
     },
 
     async createMoment(creatorId: string, content: string, type: 'text' | 'image' | 'video' = 'text', mediaIds: string[] = [], visibility: 'public' | 'private' | 'followers' = 'public') {
+        const permissions = [
+            Permission.read(Role.user(creatorId)),
+            Permission.update(Role.user(creatorId)),
+            Permission.delete(Role.user(creatorId)),
+        ];
+
+        if (visibility === 'public') {
+            permissions.push(Permission.read(Role.any()));
+            permissions.push(Permission.read(Role.guests()));
+        }
+
         return await tablesDB.createRow(DB_ID, MOMENTS_TABLE, ID.unique(), {
-            creatorId,
+            userId: creatorId, // Use userId consistent with schema if needed
             content,
             type,
-            mediaIds,
-            visibility,
-            createdAt: new Date().toISOString()
-        });
+            fileId: mediaIds[0] || null, // Moments schema uses fileId
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Moments expire in 24h
+        }, permissions);
     },
 
     async deleteMoment(momentId: string) {
