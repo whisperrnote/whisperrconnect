@@ -22,6 +22,67 @@ const profileCache = new Map<string, { data: any; expires: number }>();
 const CACHE_TTL = 30000; // 30 seconds
 
 export const UsersService = {
+    /**
+     * Universal Identity Hook: Ensures user has a normalized, discoverable record in chat.users.
+     */
+    async ensureGlobalProfile(user: any) {
+        if (!user?.$id) return null;
+
+        try {
+            const prefs = await account.getPrefs();
+            let username = prefs?.username || user.name || user.email.split('@')[0];
+            
+            // Normalize: lowercase, no @, clean alphanumeric
+            username = username.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+            if (!username) username = `user_${user.$id.slice(0, 8)}`;
+
+            let profile;
+            try {
+                profile = await tablesDB.getRow(DB_ID, USERS_TABLE, user.$id);
+            } catch (e: any) {
+                if (e.code !== 404) throw e;
+                profile = null;
+            }
+
+            const profileData = {
+                username,
+                displayName: user.name || username,
+                updatedAt: new Date().toISOString(),
+                privacySettings: JSON.stringify({ public: true, searchable: true }),
+                avatarUrl: user.avatarUrl || null,
+                appsActive: ['connect'],
+            };
+
+            if (!profile) {
+                console.log('[UsersService] Initializing global profile for:', user.$id);
+                await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, {
+                    ...profileData,
+                    createdAt: new Date().toISOString()
+                }, [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(user.$id)),
+                    Permission.delete(Role.user(user.$id))
+                ]);
+            } else {
+                // Healing Logic: Fix broken or private-by-mistake profiles
+                const isMalformed = profile.username !== username || !profile.privacySettings || profile.privacySettings.includes('"public":false');
+                if (isMalformed) {
+                    console.log('[UsersService] Healing global profile for:', user.$id);
+                    await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, profileData);
+                }
+            }
+
+            if (prefs.username !== username) {
+                await account.updatePrefs({ ...prefs, username });
+            }
+
+            return username;
+        } catch (e) {
+            console.warn('[UsersService] ensureGlobalProfile failed:', e);
+            return null;
+        }
+    },
+
     async getProfile(username: string) {
         const normalized = normalizeUsername(username);
         if (!normalized) return null;
