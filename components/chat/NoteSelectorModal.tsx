@@ -21,8 +21,6 @@ import NoteIcon from '@mui/icons-material/DescriptionOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
 import { EcosystemService } from '@/lib/services/ecosystem';
 import { useAuth } from '@/lib/auth';
-import { ecosystemSecurity } from '@/lib/ecosystem/security';
-import { MasterPassModal } from './MasterPassModal';
 
 interface NoteSelectorModalProps {
     open: boolean;
@@ -35,8 +33,6 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
     const [notes, setNotes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [unlockModalOpen, setUnlockModalOpen] = useState(false);
-    const [pendingSelection, setPendingSelection] = useState<any>(null);
 
     useEffect(() => {
         if (open && user) {
@@ -57,22 +53,9 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
         }
     };
 
-    const handleSelect = async (note: any) => {
-        if (!ecosystemSecurity.status.isUnlocked) {
-            setPendingSelection(note);
-            setUnlockModalOpen(true);
-            return;
-        }
-
-        try {
-            // Decrypt note title for display in chat if needed, 
-            // but usually we just send the ID or a snippet.
-            // The user requested to attach the note.
-            onSelect(note);
-            onClose();
-        } catch (error) {
-            console.error('Failed to process note selection:', error);
-        }
+    const handleSelect = (note: any) => {
+        onSelect(note);
+        onClose();
     };
 
     const filteredNotes = notes.filter(note => {
@@ -158,18 +141,5 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
                     <Button onClick={onClose} sx={{ color: 'text.secondary' }}>Cancel</Button>
                 </DialogActions>
             </Dialog>
-
-            <MasterPassModal 
-                open={unlockModalOpen} 
-                onClose={() => setUnlockModalOpen(false)} 
-                onSuccess={() => {
-                    if (pendingSelection) {
-                        onSelect(pendingSelection);
-                        setPendingSelection(null);
-                        onClose();
-                    }
-                }}
-            />
-        </>
     );
 };
