@@ -83,9 +83,9 @@ export const UsersService = {
         }
 
         return await tablesDB.createRow(
-            DB_ID, 
-            USERS_TABLE, 
-            userId, 
+            DB_ID,
+            USERS_TABLE,
+            userId,
             {
                 username: normalized,
                 displayName: data.displayName,
@@ -163,12 +163,14 @@ export const UsersService = {
     },
 
     async searchUsers(query: string) {
-        // Search by username or displayName
-        // Note: Appwrite search queries might need specific indexes.
-        // Assuming 'username' and 'displayName' are indexed (fulltext or key).
-        // For MVP, we'll search username.
+        const cleaned = query.trim().replace(/^@/, '');
+        if (!cleaned) return { rows: [], total: 0 };
+
         return await tablesDB.listRows(DB_ID, USERS_TABLE, [
-            Query.search('username', query),
+            Query.or([
+                Query.search('username', cleaned.toLowerCase()),
+                Query.search('displayName', cleaned)
+            ]),
             Query.limit(10)
         ]);
     },
