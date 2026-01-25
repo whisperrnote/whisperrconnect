@@ -36,6 +36,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { fetchProfilePreview, getCachedProfilePreview } from '@/lib/profile-preview';
 import { getUserProfilePicId } from '@/lib/user-utils';
 import { useAuth } from '@/lib/auth';
+import { UsersService } from '@/lib/services/users';
 import {
     Avatar,
     Menu,

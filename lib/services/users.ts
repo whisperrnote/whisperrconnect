@@ -1,5 +1,5 @@
 import { ID, Query, Permission, Role } from 'appwrite';
-import { tablesDB } from '../appwrite/client';
+import { tablesDB, account } from '../appwrite/client';
 import { APPWRITE_CONFIG } from '../appwrite/config';
 
 const DB_ID = APPWRITE_CONFIG.DATABASES.CHAT;
@@ -270,7 +270,7 @@ export const UsersService = {
                             displayName: noteUser.name,
                             avatarUrl: noteUser.profilePicId || noteUser.avatar || null,
                             privacySettings: JSON.stringify({ public: true, searchable: true })
-                        });
+                        } as any);
                         res.total++;
                     }
                 }
