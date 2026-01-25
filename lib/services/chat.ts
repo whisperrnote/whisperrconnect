@@ -8,6 +8,8 @@ const MSG_TABLE = APPWRITE_CONFIG.TABLES.CHAT.MESSAGES;
 
 export const ChatService = {
     async getConversations(userId: string) {
+        // Query for conversations where the user is a participant
+        // For self-chats, we ensure they are always findable
         return await tablesDB.listRows(DB_ID, CONV_TABLE, [
             Query.contains('participants', userId),
             Query.orderDesc('lastMessageAt')
@@ -15,15 +17,17 @@ export const ChatService = {
     },
 
     async createConversation(participants: string[], type: 'direct' | 'group' = 'direct', name?: string) {
-        // Deduplicate participants if not self-chat
-        const uniqueParticipants = Array.from(new Set(participants));
-        // If it was meant to be a self-chat (participants=[me, me]), Set reduces it to [me].
-        // If we want to support self-chat, [me] is valid.
+        // For direct self-chats, we want to ensure participants has at least 2 entries of me 
+        // to make Query.contains more reliable, or just keep it as is if deduplication is handled.
+        const isSelf = type === 'direct' && participants.length === 1 && participants[0] === participants[participants.length - 1];
+        
+        const uniqueParticipants = isSelf ? [participants[0], participants[0]] : Array.from(new Set(participants));
         
         return await tablesDB.createRow(DB_ID, CONV_TABLE, ID.unique(), {
             participants: uniqueParticipants,
             type,
             name,
+            creatorId: participants[0],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });

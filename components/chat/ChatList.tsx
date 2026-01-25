@@ -40,7 +40,10 @@ export const ChatList = () => {
             let rows = [...response.rows];
 
             // Bridge: Ensure self-chat (Saved Messages) exists
-            const selfChat = rows.find(c => c.type === 'direct' && c.participants.length === 1 && c.participants[0] === user!.$id);
+            const selfChat = rows.find(c => 
+                c.type === 'direct' && 
+                c.participants.every((p: string) => p === user!.$id)
+            );
             
             if (!selfChat) {
                 try {
@@ -54,20 +57,24 @@ export const ChatList = () => {
             // Enrich with other participant's name
             const enriched = await Promise.all(rows.map(async (conv: any) => {
                 if (conv.type === 'direct') {
-                    const otherId = conv.participants.find((p: string) => p !== user!.$id);
-                    if (otherId) {
-                        try {
-                            const profile = await UsersService.getProfileById(otherId);
-                            return { 
-                                ...conv, 
-                                otherUserId: otherId, 
-                                name: profile ? (profile.displayName || profile.username) : ('User ' + otherId.substring(0, 5)) 
-                            };
-                        } catch (e) {
-                            return conv;
+                    const isActuallySelf = conv.participants.every((p: string) => p === user!.$id);
+                    
+                    if (!isActuallySelf) {
+                        const otherId = conv.participants.find((p: string) => p !== user!.$id);
+                        if (otherId) {
+                            try {
+                                const profile = await UsersService.getProfileById(otherId);
+                                return { 
+                                    ...conv, 
+                                    otherUserId: otherId, 
+                                    name: profile ? (profile.displayName || profile.username) : ('User ' + otherId.substring(0, 5)) 
+                                };
+                            } catch (e) {
+                                return conv;
+                            }
                         }
                     } else {
-                        // Self Chat (participants only contains me)
+                        // Self Chat
                         return {
                             ...conv,
                             otherUserId: user!.$id,

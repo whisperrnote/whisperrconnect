@@ -417,7 +417,7 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
 
-    const isSelf = conversation?.type === 'direct' && conversation?.participants?.length === 1;
+    const isSelf = conversation?.type === 'direct' && conversation?.participants?.every((p: string) => p === user?.$id);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default', position: 'relative' }}>
