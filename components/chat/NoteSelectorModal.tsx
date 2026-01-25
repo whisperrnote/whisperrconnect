@@ -66,23 +66,22 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
     });
 
     return (
-        <>
-            <Dialog
-                open={open}
-                onClose={onClose}
-                PaperProps={{
-                    sx: {
-                        borderRadius: '24px',
-                        bgcolor: 'rgba(15, 15, 15, 0.95)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        backgroundImage: 'none',
-                        width: '100%',
-                        maxWidth: '500px',
-                        minHeight: '400px'
-                    }
-                }}
-            >
+        <Dialog
+            open={open}
+            onClose={onClose}
+            PaperProps={{
+                sx: {
+                    borderRadius: '24px',
+                    bgcolor: 'rgba(15, 15, 15, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backgroundImage: 'none',
+                    width: '100%',
+                    maxWidth: '500px',
+                    minHeight: '400px'
+                }
+            }}
+        >
                 <DialogTitle sx={{ fontWeight: 800, fontFamily: 'var(--font-space-grotesk)' }}>
                     Attach Note
                 </DialogTitle>

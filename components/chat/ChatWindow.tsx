@@ -171,12 +171,80 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     const loadMessages = async () => {
         try {
             const response = await ChatService.getMessages(conversationId);
+            const conv = await ChatService.getConversationById(conversationId);
+            
+            // Filter by clearedAt if exists in settings
+            let displayMessages = response.rows;
+            if (user && conv.settings) {
+                try {
+                    const decryptedSettings = await ecosystemSecurity.decrypt(conv.settings);
+                    const settings = JSON.parse(decryptedSettings);
+                    const myClearedAt = settings.clearedAt?.[user.$id];
+                    if (myClearedAt) {
+                        displayMessages = displayMessages.filter((m: any) => new Date(m.$createdAt) > new Date(myClearedAt));
+                    }
+                } catch (e) {}
+            }
+
             // Reverse once for display order (bottom is newest)
-            setMessages(response.rows.reverse() as unknown as Messages[]);
+            setMessages(displayMessages.reverse() as unknown as Messages[]);
         } catch (error) {
             console.error('Failed to load messages:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleClearChat = async (mode: 'me' | 'everyone') => {
+        if (!user || !confirm(`Are you sure you want to wipe this chat ${mode === 'me' ? 'for yourself' : 'for everyone'}?`)) return;
+        
+        setLoading(true);
+        try {
+            if (isSelf) {
+                await ChatService.nuclearWipe(conversationId);
+            } else {
+                if (mode === 'everyone') {
+                    await ChatService.wipeMyFootprint(conversationId, user.$id);
+                }
+                await ChatService.clearChatForMe(conversationId, user.$id);
+            }
+            await loadMessages();
+            setAnchorEl(null);
+        } catch (e) {
+            console.error('Wipe failed:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleExport = async () => {
+        const data = messages.map(m => ({
+            sender: m.senderId === user?.$id ? 'Me' : 'Partner',
+            time: m.$createdAt,
+            content: m.content,
+            type: m.type
+        }));
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat_export_${conversationId}.json`;
+        a.click();
+        setAnchorEl(null);
+    };
+
+    const handleDeleteMessage = async (messageId: string, everyone: boolean) => {
+        try {
+            if (everyone) {
+                await ChatService.deleteMessage(messageId);
+            } else {
+                // Individual 'delete for me' would require a schema change (deletedBy array)
+                // For now, we only support 'delete for everyone' if author.
+                alert("Individual 'Delete for Me' is coming soon. Use 'Clear Chat' for now.");
+            }
+        } catch (e) {
+            console.error('Delete failed:', e);
         }
     };
 

@@ -146,6 +146,10 @@ export const ChatService = {
     },
 
     async getMessages(conversationId: string, limit = 50, offset = 0) {
+        const conv = await this.getConversationById(conversationId);
+        const userId = (await ecosystemSecurity.fetchKeychain('') as any)?.userId; // Get current user ID context if possible, or pass it in. 
+        // Better: let the component pass the userId or handle filtering there to keep service clean.
+        
         const res = await tablesDB.listRows(DB_ID, MSG_TABLE, [
             Query.equal('conversationId', conversationId),
             Query.orderDesc('createdAt'),
@@ -168,4 +172,148 @@ export const ChatService = {
         return res;
     },
 
-}
+    /**
+     * Wipes all messages authored by the user in this conversation.
+     * Hard-deletes documents from the server.
+     */
+    async wipeMyFootprint(conversationId: string, userId: string) {
+        console.log(`[ChatService] Wiping footprint for ${userId} in ${conversationId}`);
+        // 1. Fetch all messages sent by this user
+        const res = await tablesDB.listRows(DB_ID, MSG_TABLE, [
+            Query.equal('conversationId', conversationId),
+            Query.equal('senderId', userId),
+            Query.limit(1000) // Max limit for a wipe
+        ]);
+
+        // 2. Bulk delete in parallel batches of 10
+        const batches = [];
+        for (let i = 0; i < res.rows.length; i += 10) {
+            const batch = res.rows.slice(i, i + 10).map(msg => tablesDB.deleteRow(DB_ID, MSG_TABLE, msg.$id));
+            batches.push(Promise.all(batch));
+        }
+        await Promise.all(batches);
+        return { success: true, count: res.total };
+    },
+
+    /**
+     * Sets a 'clearedAt' timestamp for the user in the conversation settings.
+     * This is a 'soft-delete' that provides a clean slate without affecting others.
+     */
+    async clearChatForMe(conversationId: string, userId: string) {
+        const conv = await tablesDB.getRow(DB_ID, CONV_TABLE, conversationId);
+        let settings: any = {};
+        
+        try {
+            if (conv.settings) {
+                const decryptedSettings = await ecosystemSecurity.decrypt(conv.settings);
+                settings = JSON.parse(decryptedSettings);
+            }
+        } catch (e) {
+            // Settings might be empty or unencrypted
+        }
+
+        if (!settings.clearedAt) settings.clearedAt = {};
+        settings.clearedAt[userId] = new Date().toISOString();
+
+        const encryptedSettings = await ecosystemSecurity.encrypt(JSON.stringify(settings));
+        
+        return await tablesDB.updateRow(DB_ID, CONV_TABLE, conversationId, {
+            settings: encryptedSettings
+        });
+    },
+
+    /**
+     * Entirely deletes all messages in a conversation (Reserved for Saved Messages/Self-Chat)
+     */
+    async nuclearWipe(conversationId: string) {
+        const res = await tablesDB.listRows(DB_ID, MSG_TABLE, [
+            Query.equal('conversationId', conversationId),
+            Query.limit(1000)
+        ]);
+
+        const batches = [];
+        for (let i = 0; i < res.rows.length; i += 10) {
+            const batch = res.rows.slice(i, i + 10).map(msg => tablesDB.deleteRow(DB_ID, MSG_TABLE, msg.$id));
+            batches.push(Promise.all(batch));
+        }
+        await Promise.all(batches);
+        return { success: true };
+    },
+
+    async updateConversation(conversationId: string, data: Partial<{ 
+        name: string; 
+        description: string; 
+        avatarUrl: string; 
+        participants: string[]; 
+        admins: string[]; 
+        isPinned: string[]; 
+        isMuted: string[]; 
+        isArchived: string[]; 
+        tags: string[];
+    }>) {
+        return await tablesDB.updateRow(DB_ID, CONV_TABLE, conversationId, {
+            ...data,
+            updatedAt: new Date().toISOString()
+        });
+    },
+
+    async addParticipant(conversationId: string, userId: string) {
+        const conv = await this.getConversationById(conversationId);
+        const participants = conv.participants || [];
+        if (!participants.includes(userId)) {
+            return await this.updateConversation(conversationId, {
+                participants: [...participants, userId]
+            });
+        }
+        return conv;
+    },
+
+    async removeParticipant(conversationId: string, userId: string) {
+        const conv = await this.getConversationById(conversationId);
+        const participants = (conv.participants || []).filter((id: string) => id !== userId);
+        const admins = (conv.admins || []).filter((id: string) => id !== userId);
+        return await this.updateConversation(conversationId, {
+            participants,
+            admins
+        });
+    },
+
+    async deleteMessage(messageId: string) {
+        return await tablesDB.deleteRow(DB_ID, MSG_TABLE, messageId);
+    },
+
+    async updateMessage(messageId: string, data: Partial<{ content: string; type: string; readBy: string[] }>) {
+        return await tablesDB.updateRow(DB_ID, MSG_TABLE, messageId, {
+            ...data,
+            updatedAt: new Date().toISOString()
+        });
+    },
+
+    async markAsRead(messageId: string, userId: string) {
+        try {
+            const message = await tablesDB.getRow(DB_ID, MSG_TABLE, messageId);
+            const readBy = message.readBy || [];
+            if (!readBy.includes(userId)) {
+                return await tablesDB.updateRow(DB_ID, MSG_TABLE, messageId, {
+                    readBy: [...readBy, userId]
+                });
+            }
+            return message;
+        } catch (error) {
+            console.error('Failed to mark message as read:', error);
+            return null;
+        }
+    },
+
+    async markConversationAsRead(conversationId: string, userId: string) {
+        // Fetch unread messages in this conversation and mark them as read
+        // Note: In a production environment, this might be better handled by a cloud function or a batch update
+        const unreadMessages = await tablesDB.listRows(DB_ID, MSG_TABLE, [
+            Query.equal('conversationId', conversationId),
+            Query.notContains('readBy', userId),
+            Query.limit(100)
+        ]);
+
+        return Promise.all(unreadMessages.rows.map(msg => this.markAsRead(msg.$id, userId)));
+    },
+};
