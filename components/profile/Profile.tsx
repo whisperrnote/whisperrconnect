@@ -44,24 +44,27 @@ export const Profile = ({ username }: ProfileProps) => {
 
     const normalizedUsername = normalizeUsername(username);
 
-    // Identity check: is this the logged-in user's profile?
-    // We check ID first, then fallback to username match if no ID is available yet
+    // Simplified and more robust own-profile check
     const isOwnProfile = !!(authUser && (
         (profile && profile.$id === authUser.$id) ||
-        (!username && !profile) || // Initial load of /profile
+        (!username) || 
         (normalizedUsername && (authUser.prefs?.username === normalizedUsername || authUser.name === username))
     ));
 
     useEffect(() => {
+        console.log('[Profile] authUser:', authUser?.$id, 'profile:', profile?.$id, 'isOwnProfile:', isOwnProfile);
+    }, [authUser, profile, isOwnProfile]);
+
+    useEffect(() => {
         loadProfile();
-    }, [username, authUser?.$id]); // Re-run if username prop changes or user logs in/out
+    }, [username, authUser?.$id]); 
 
     useEffect(() => {
         const fetchAvatar = async () => {
             // Priority 1: If it's our own profile, fetch EXACTLY like the topbar
-            // Topbar uses authUser.prefs.profilePicId or authUser.profilePicId
             if (isOwnProfile && authUser) {
                 const picId = getUserProfilePicId(authUser);
+                console.log('[Profile] Own profile detected, fetching avatar for ID:', picId);
                 if (picId) {
                     try {
                         const url = await fetchProfilePreview(picId, 200, 200);
@@ -75,8 +78,8 @@ export const Profile = ({ username }: ProfileProps) => {
 
             // Priority 2: Fetch from the profile database record
             if (profile) {
-                // Try all possible keys that might hold the file ID
                 const picId = profile.avatarFileId || profile.profilePicId || profile.avatarUrl || profile.avatar;
+                console.log('[Profile] Fetching avatar from database record ID:', picId);
                 if (picId && typeof picId === 'string' && picId.length > 5) {
                     try {
                         const url = await fetchProfilePreview(picId, 200, 200);

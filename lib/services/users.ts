@@ -48,19 +48,14 @@ export const UsersService = {
             if (!username) username = `user_${user.$id.slice(0, 8)}`;
 
             const profilePicId = prefs?.profilePicId || user.profilePicId || null;
-            const profileData: any = {
+            const baseData: any = {
                 username,
                 displayName: user.name || username,
                 updatedAt: new Date().toISOString(),
                 walletAddress: prefs?.walletEth || prefs?.walletAddress || null,
-                bio: prefs?.bio || profile?.bio || "",
+                bio: prefs?.bio || (profile ? profile.bio : ""),
                 privacySettings: JSON.stringify({ public: true, searchable: true })
             };
-
-            // Set avatar field
-            if (profilePicId) {
-                profileData.avatarFileId = profilePicId;
-            }
 
             const permissions = [
                 Permission.read(Role.any()),
@@ -68,24 +63,26 @@ export const UsersService = {
                 Permission.delete(Role.user(user.$id))
             ];
 
+            const attempts = [
+                { avatarFileId: profilePicId },
+                { profilePicId: profilePicId },
+                {}
+            ];
+
             if (!profile) {
                 console.log('[Identity] Initializing global record for:', user.$id);
-                try {
-                    // Try primary attribute: avatarFileId
-                    const data = { ...profileData, createdAt: new Date().toISOString(), avatarFileId: profilePicId };
-                    await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, data, permissions);
-                } catch (e: any) {
-                    const errStr = JSON.stringify(e).toLowerCase();
-                    if (errStr.includes('avatarfileid')) {
-                        try {
-                            // Try secondary: profilePicId
-                            const data = { ...profileData, createdAt: new Date().toISOString(), profilePicId };
-                            await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, data, permissions);
-                        } catch (e2: any) {
-                            // Final fallback: no avatar
-                            await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, { ...profileData, createdAt: new Date().toISOString() }, permissions);
+                for (const attempt of attempts) {
+                    try {
+                        const payload = { ...baseData, createdAt: new Date().toISOString(), ...attempt };
+                        await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, payload, permissions);
+                        break; 
+                    } catch (e: any) {
+                        const errStr = JSON.stringify(e).toLowerCase();
+                        if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                            continue;
                         }
-                    } else throw e;
+                        throw e;
+                    }
                 }
             } else {
                 // Self-Healing: Fix malformed records
@@ -93,19 +90,18 @@ export const UsersService = {
                 
                 if (needsHealing) {
                     console.log('[Identity] Healing global record for:', user.$id);
-                    try {
-                        const data = { ...profileData, avatarFileId: profilePicId };
-                        await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, data);
-                    } catch (e: any) {
-                        const errStr = JSON.stringify(e).toLowerCase();
-                        if (errStr.includes('avatarfileid')) {
-                            try {
-                                const data = { ...profileData, profilePicId };
-                                await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, data);
-                            } catch (e2: any) {
-                                await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, profileData);
+                    for (const attempt of attempts) {
+                        try {
+                            const payload = { ...baseData, ...attempt };
+                            await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, payload);
+                            break;
+                        } catch (e: any) {
+                            const errStr = JSON.stringify(e).toLowerCase();
+                            if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                                continue;
                             }
-                        } else throw e;
+                            throw e;
+                        }
                     }
                 }
             }
@@ -166,43 +162,40 @@ export const UsersService = {
             }
         }
 
-        if (data.displayName) cleanData.displayName = data.displayName;
+        if (data.displayName !== undefined) cleanData.displayName = data.displayName;
         if (data.bio !== undefined) cleanData.bio = data.bio;
-        if (data.walletAddress) cleanData.walletAddress = data.walletAddress;
+        if (data.walletAddress !== undefined) cleanData.walletAddress = data.walletAddress;
         
         const picId = data.avatarFileId || data.profilePicId || data.avatarUrl || data.avatar;
 
-        try {
-            // First attempt: try with avatarFileId
-            const firstAttempt = { ...cleanData };
-            if (picId) firstAttempt.avatarFileId = picId;
-            return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, firstAttempt);
-        } catch (e: any) {
-            const errStr = JSON.stringify(e).toLowerCase();
-            if (errStr.includes('avatarfileid')) {
-                // Second attempt: try with profilePicId
-                try {
-                    const secondAttempt = { ...cleanData };
-                    if (picId) secondAttempt.profilePicId = picId;
-                    return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, secondAttempt);
-                } catch (e2: any) {
-                    const errStr2 = JSON.stringify(e2).toLowerCase();
-                    if (errStr2.includes('profilepicid')) {
-                        // Third attempt: try with avatarUrl
-                        try {
-                            const thirdAttempt = { ...cleanData };
-                            if (picId) thirdAttempt.avatarUrl = picId;
-                            return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, thirdAttempt);
-                        } catch (e3: any) {
-                            // Final fallback: no avatar fields at all
-                            return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, cleanData);
-                        }
-                    }
-                    throw e2;
+        // Probing sequence for avatar attributes
+        const attempts = [
+            { avatarFileId: picId },
+            { profilePicId: picId },
+            { avatarUrl: picId },
+            {} // Final fallback: no avatar field
+        ];
+
+        let lastError = null;
+        for (const attempt of attempts) {
+            try {
+                // If picId is null/undefined, we don't want to send the key at all in the fallback attempts
+                const payload = { ...cleanData };
+                const key = Object.keys(attempt)[0];
+                if (key && picId) payload[key] = picId;
+                
+                return await tablesDB.updateRow(DB_ID, USERS_TABLE, userId, payload);
+            } catch (e: any) {
+                lastError = e;
+                const errStr = JSON.stringify(e).toLowerCase();
+                // If it's an "unknown attribute" error, try the next attempt
+                if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                    continue;
                 }
+                throw e; // Rethrow other errors (permissions, etc.)
             }
-            throw e;
         }
+        throw lastError;
     },
 
     async createProfile(
@@ -217,25 +210,40 @@ export const UsersService = {
         const available = await this.isUsernameAvailable(normalized);
         if (!available) throw new Error('Username already taken');
 
-        return await tablesDB.createRow(
-            DB_ID,
-            USERS_TABLE,
-            userId,
-            {
-                username: normalized,
-                displayName: data.displayName || normalized,
-                bio: data.bio || "",
-                avatarFileId: data.avatarFileId || data.profilePicId || null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                privacySettings: JSON.stringify({ public: true, searchable: true })
-            },
-            [
-                Permission.read(Role.any()),
-                Permission.update(Role.user(userId)),
-                Permission.delete(Role.user(userId))
-            ]
-        );
+        const baseData = {
+            username: normalized,
+            displayName: data.displayName || normalized,
+            bio: data.bio || "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            privacySettings: JSON.stringify({ public: true, searchable: true })
+        };
+
+        const picId = data.avatarFileId || data.profilePicId || data.avatarUrl || data.avatar;
+        const permissions = [
+            Permission.read(Role.any()),
+            Permission.update(Role.user(userId)),
+            Permission.delete(Role.user(userId))
+        ];
+
+        const attempts = [
+            { avatarFileId: picId },
+            { profilePicId: picId },
+            {}
+        ];
+
+        for (const attempt of attempts) {
+            try {
+                const payload = { ...baseData, ...attempt };
+                return await tablesDB.createRow(DB_ID, USERS_TABLE, userId, payload, permissions);
+            } catch (e: any) {
+                const errStr = JSON.stringify(e).toLowerCase();
+                if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                    continue;
+                }
+                throw e;
+            }
+        }
     },
 
     async getWhisperrnoteUserById(userId: string) {
@@ -290,7 +298,7 @@ export const UsersService = {
         try {
             return await this.createProfile(user.$id, candidate, user?.email || '', {
                 displayName: externalUser?.name || user?.name,
-                profilePicId: user.prefs?.profilePicId
+                avatarFileId: user.prefs?.profilePicId
             });
         } catch (e) {
             return null;
