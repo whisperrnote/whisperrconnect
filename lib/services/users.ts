@@ -18,15 +18,25 @@ const normalizeUsername = (input: string | null | undefined): string | null => {
     return cleaned || null;
 };
 
+const profileCache = new Map<string, { data: any; expires: number }>();
+const CACHE_TTL = 30000; // 30 seconds
+
 export const UsersService = {
     async getProfile(username: string) {
         const normalized = normalizeUsername(username);
         if (!normalized) return null;
+
+        const cacheKey = `u:${normalized}`;
+        const cached = profileCache.get(cacheKey);
+        if (cached && cached.expires > Date.now()) return cached.data;
+
         const result = await tablesDB.listRows(DB_ID, USERS_TABLE, [
             Query.equal('username', normalized),
             Query.limit(1)
         ]);
-        return result.rows[0] || null;
+        const data = result.rows[0] || null;
+        profileCache.set(cacheKey, { data, expires: Date.now() + CACHE_TTL });
+        return data;
     },
 
     async getProfileById(userId: string) {
@@ -166,13 +176,19 @@ export const UsersService = {
         const cleaned = query.trim().replace(/^@/, '');
         if (!cleaned) return { rows: [], total: 0 };
 
-        return await tablesDB.listRows(DB_ID, USERS_TABLE, [
+        const cacheKey = `s:${cleaned.toLowerCase()}`;
+        const cached = profileCache.get(cacheKey);
+        if (cached && cached.expires > Date.now()) return cached.data;
+
+        const res = await tablesDB.listRows(DB_ID, USERS_TABLE, [
             Query.or([
                 Query.search('username', cleaned.toLowerCase()),
                 Query.search('displayName', cleaned)
             ]),
             Query.limit(10)
         ]);
+        profileCache.set(cacheKey, { data: res, expires: Date.now() + 10000 }); // 10s for search
+        return res;
     },
 
     async updatePresence(userId: string, status: 'online' | 'away' | 'busy' | 'offline', customStatus?: string) {
