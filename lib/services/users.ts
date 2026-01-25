@@ -166,7 +166,14 @@ export const UsersService = {
         if (data.bio !== undefined) cleanData.bio = data.bio;
         if (data.walletAddress !== undefined) cleanData.walletAddress = data.walletAddress;
         
-        const picId = data.avatarFileId || data.profilePicId || data.avatarUrl || data.avatar;
+        let picId = data.avatarFileId || data.profilePicId || data.avatarUrl || data.avatar;
+        if (!picId) {
+            const prefs = await account.getPrefs();
+            const prefPicId = prefs?.profilePicId;
+            if (typeof prefPicId === 'string' && prefPicId.trim()) {
+                picId = prefPicId.trim();
+            }
+        }
 
         // Probing sequence for avatar attributes
         const attempts = [
