@@ -26,7 +26,7 @@ import { EcosystemService } from '@/lib/services/ecosystem';
 import { useAuth } from '@/lib/auth';
 import { ecosystemSecurity } from '@/lib/ecosystem/security';
 import { MasterPassModal } from './MasterPassModal';
-import { authenticator } from 'otplib';
+import { generateSync } from 'otplib';
 
 interface SecretSelectorModalProps {
     open: boolean;
@@ -43,7 +43,7 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [unlockModalOpen, setUnlockModalOpen] = useState(false);
-    const [pendingSelection, setPendingSelection] = useState<{item: any, type: 'secret' | 'totp'} | null>(null);
+    const [pendingSelection, setPendingSelection] = useState<{ item: any, type: 'secret' | 'totp' } | null>(null);
 
     useEffect(() => {
         if (open && user) {
@@ -85,7 +85,7 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
             if (type === 'totp') {
                 // Decrypt and generate code
                 const decryptedSecret = await ecosystemSecurity.decrypt(item.secretKey);
-                const code = authenticator.generate(decryptedSecret.replace(/\s+/g, '').toUpperCase());
+                const code = generateSync({ secret: decryptedSecret.replace(/\s+/g, '').toUpperCase() });
                 onSelect({ ...item, currentCode: code }, 'totp');
             } else {
                 onSelect(item, 'secret');
@@ -96,7 +96,7 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
         }
     };
 
-    const filteredItems = tab === 0 
+    const filteredItems = tab === 0
         ? secrets.filter(s => (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
         : totps.filter(t => (t.issuer || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -151,14 +151,14 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
                                 </Typography>
                             ) : (
                                 filteredItems.map((item) => (
-                                    <ListItem 
-                                        key={item.$id} 
+                                    <ListItem
+                                        key={item.$id}
                                         component="div"
                                         disabled={tab === 0 && !isSelf}
                                         onClick={() => handleSelect(item, tab === 0 ? 'secret' : 'totp')}
-                                        sx={{ 
-                                            borderRadius: '12px', 
-                                            mb: 1, 
+                                        sx={{
+                                            borderRadius: '12px',
+                                            mb: 1,
                                             cursor: tab === 0 && !isSelf ? 'default' : 'pointer',
                                             '&:hover': { bgcolor: tab === 0 && !isSelf ? 'transparent' : 'rgba(255, 255, 255, 0.05)' },
                                             opacity: tab === 0 && !isSelf ? 0.5 : 1
@@ -167,8 +167,8 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
                                         <ListItemIcon>
                                             {tab === 0 ? <ShieldIcon sx={{ color: 'primary.main' }} /> : <KeyIcon sx={{ color: '#FFD700' }} />}
                                         </ListItemIcon>
-                                        <ListItemText 
-                                            primary={tab === 0 ? (item.name || 'Unnamed') : (item.issuer || 'Unknown')} 
+                                        <ListItemText
+                                            primary={tab === 0 ? (item.name || 'Unnamed') : (item.issuer || 'Unknown')}
                                             secondary={tab === 0 ? item.username : item.accountName}
                                             primaryTypographyProps={{ fontWeight: 600 }}
                                         />
@@ -186,16 +186,16 @@ export const SecretSelectorModal = ({ open, onClose, onSelect, isSelf }: SecretS
                 </DialogActions>
             </Dialog>
 
-            <MasterPassModal 
-                open={unlockModalOpen} 
-                onClose={() => setUnlockModalOpen(false)} 
+            <MasterPassModal
+                open={unlockModalOpen}
+                onClose={() => setUnlockModalOpen(false)}
                 onSuccess={async () => {
                     if (pendingSelection) {
                         const { item, type } = pendingSelection;
                         try {
                             if (type === 'totp') {
                                 const decryptedSecret = await ecosystemSecurity.decrypt(item.secretKey);
-                                const code = authenticator.generate(decryptedSecret.replace(/\s+/g, '').toUpperCase());
+                                const code = generateSync({ secret: decryptedSecret.replace(/\s+/g, '').toUpperCase() });
                                 onSelect({ ...item, currentCode: code }, 'totp');
                             } else {
                                 onSelect(item, 'secret');
