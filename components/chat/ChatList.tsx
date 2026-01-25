@@ -17,14 +17,16 @@ import {
     CircularProgress,
     Divider
 } from '@mui/material';
-import GroupIcon from '@mui/icons-material/Group';
-import PersonIcon from '@mui/icons-material/Person';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import GroupIcon from '@mui/icons-material/GroupWorkOutlined';
+import PersonIcon from '@mui/icons-material/PersonOutlined';
+import BookmarkIcon from '@mui/icons-material/BookmarkOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 
 export const ChatList = () => {
     const { user } = useAuth();
     const [conversations, setConversations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -69,7 +71,7 @@ export const ChatList = () => {
                         return {
                             ...conv,
                             otherUserId: user!.$id,
-                            name: 'Saved Messages (Me)',
+                            name: 'Saved Messages',
                             isSelf: true
                         };
                     }
@@ -94,40 +96,118 @@ export const ChatList = () => {
         }
     };
 
-    if (loading) return <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+    if (loading) return <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} sx={{ color: 'primary.main' }} /></Box>;
+
+    const filteredConversations = conversations.filter(c => 
+        c.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="h6" fontWeight="bold">Messages</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
+            <Box sx={{ p: 3, pb: 2 }}>
+                <Typography 
+                    variant="h5" 
+                    sx={{ 
+                        fontWeight: 900, 
+                        fontFamily: 'var(--font-space-grotesk)',
+                        letterSpacing: '-0.02em',
+                        mb: 2,
+                        color: 'text.primary'
+                    }}
+                >
+                    Messages
+                </Typography>
+                
+                <Box 
+                    sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1, 
+                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '12px',
+                        px: 2,
+                        py: 1,
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        '&:focus-within': {
+                            borderColor: 'primary.main',
+                            bgcolor: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    }}
+                >
+                    <SearchIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                    <input 
+                        placeholder="Search conversations..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            fontSize: '0.875rem',
+                            outline: 'none',
+                            width: '100%',
+                            fontFamily: 'var(--font-inter)'
+                        }}
+                    />
+                </Box>
             </Box>
-            <Box sx={{ overflowY: 'auto', flex: 1 }}>
-                {conversations.length === 0 ? (
-                    <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-                        <Typography>No conversations yet.</Typography>
-                        <Typography variant="body2">Search for someone to chat with!</Typography>
+
+            <Box sx={{ overflowY: 'auto', flex: 1, px: 1 }}>
+                {filteredConversations.length === 0 ? (
+                    <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>No conversations</Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.6 }}>Start a new chat to begin</Typography>
                     </Box>
                 ) : (
-                    <List>
-                        {conversations.map((conv) => (
-                            <React.Fragment key={conv.$id}>
-                                <ListItem disablePadding>
-                                    <ListItemButton component={Link} href={`/chat/${conv.$id}`}>
-                                        <ListItemAvatar>
-                                            <Avatar sx={{ bgcolor: conv.isSelf ? 'primary.main' : undefined }}>
-                                                {conv.isSelf ? <BookmarkIcon /> : (conv.type === 'group' ? <GroupIcon /> : <PersonIcon />)}
-                                            </Avatar>
-                                        </ListItemAvatar>
-                                        <ListItemText 
-                                            primary={conv.name || (conv.type === 'direct' ? conv.otherUserId : 'Group Chat')}
-                                            secondary={new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString()}
-                                            primaryTypographyProps={{ fontWeight: 'medium' }}
-                                            secondaryTypographyProps={{ noWrap: true }}
-                                        />
-                                    </ListItemButton>
-                                </ListItem>
-                                <Divider component="li" />
-                            </React.Fragment>
+                    <List sx={{ pt: 0 }}>
+                        {filteredConversations.map((conv) => (
+                            <ListItem key={conv.$id} disablePadding sx={{ mb: 0.5 }}>
+                                <ListItemButton 
+                                    component={Link} 
+                                    href={`/chat/${conv.$id}`}
+                                    sx={{ 
+                                        borderRadius: '12px',
+                                        py: 1.5,
+                                        '&:hover': {
+                                            bgcolor: 'rgba(255, 255, 255, 0.03)'
+                                        }
+                                    }}
+                                >
+                                    <ListItemAvatar>
+                                        <Avatar 
+                                            sx={{ 
+                                                bgcolor: conv.isSelf ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                                                color: conv.isSelf ? 'primary.main' : 'text.secondary',
+                                                border: conv.isSelf ? '1px solid rgba(0, 240, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)',
+                                                width: 44,
+                                                height: 44
+                                            }}
+                                        >
+                                            {conv.isSelf ? <BookmarkIcon sx={{ fontSize: 20 }} /> : (conv.type === 'group' ? <GroupIcon sx={{ fontSize: 22 }} /> : <PersonIcon sx={{ fontSize: 22 }} />)}
+                                        </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText 
+                                        primary={conv.name || (conv.type === 'direct' ? conv.otherUserId : 'Group Chat')}
+                                        secondary={conv.lastMessageText || 'No messages yet'}
+                                        primaryTypographyProps={{ 
+                                            fontWeight: 700, 
+                                            fontSize: '0.95rem',
+                                            color: conv.isSelf ? 'primary.main' : 'text.primary',
+                                            fontFamily: 'var(--font-space-grotesk)'
+                                        }}
+                                        secondaryTypographyProps={{ 
+                                            noWrap: true,
+                                            fontSize: '0.75rem',
+                                            sx: { opacity: 0.5, mt: 0.3 }
+                                        }}
+                                    />
+                                    {conv.lastMessageAt && (
+                                        <Typography variant="caption" sx={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 600 }}>
+                                            {new Date(conv.lastMessageAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                        </Typography>
+                                    )}
+                                </ListItemButton>
+                            </ListItem>
                         ))}
                     </List>
                 )}

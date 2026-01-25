@@ -23,19 +23,23 @@ import {
     MenuItem,
     ListItemIcon
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import CallIcon from '@mui/icons-material/Call';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import MicIcon from '@mui/icons-material/Mic';
-import StopIcon from '@mui/icons-material/Stop';
-import ImageIcon from '@mui/icons-material/Image';
-import AudiotrackIcon from '@mui/icons-material/Audiotrack';
-import VideoFileIcon from '@mui/icons-material/VideoFile';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import CloseIcon from '@mui/icons-material/Close';
-import DoneIcon from '@mui/icons-material/Done';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
+import SendIcon from '@mui/icons-material/SendOutlined';
+import CallIcon from '@mui/icons-material/CallOutlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBackIosNewOutlined';
+import AttachFileIcon from '@mui/icons-material/AddCircleOutlineOutlined';
+import MicIcon from '@mui/icons-material/MicNoneOutlined';
+import StopIcon from '@mui/icons-material/StopCircleOutlined';
+import ImageIcon from '@mui/icons-material/ImageOutlined';
+import AudiotrackIcon from '@mui/icons-material/AudiotrackOutlined';
+import VideoFileIcon from '@mui/icons-material/VideoCameraFrontOutlined';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import CloseIcon from '@mui/icons-material/CloseOutlined';
+import DoneIcon from '@mui/icons-material/DoneOutlined';
+import DoneAllIcon from '@mui/icons-material/DoneAllOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVertOutlined';
+import InfoIcon from '@mui/icons-material/InfoOutlined';
+import ShieldIcon from '@mui/icons-material/ShieldOutlined';
+import BookmarkIcon from '@mui/icons-material/BookmarkOutlined';
 
 export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
     const { user } = useAuth();
@@ -282,188 +286,171 @@ export const ChatWindow = ({ conversationId }: { conversationId: string }) => {
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
 
+    const isSelf = conversation?.type === 'direct' && conversation?.participants?.length === 1;
+
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
-            {/* Header */}
-            <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-                <Toolbar>
-                    <IconButton edge="start" onClick={() => router.back()} sx={{ mr: 1 }}>
-                        <ArrowBackIcon />
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default', position: 'relative' }}>
+            <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', bgcolor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)' }}>
+                <Toolbar sx={{ gap: 1 }}>
+                    <IconButton edge="start" onClick={() => router.back()} sx={{ color: 'text.secondary' }}>
+                        <ArrowBackIcon sx={{ fontSize: 20 }} />
                     </IconButton>
-                    <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-                        {conversation?.name || 'Chat'}
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<CallIcon />}
-                        onClick={handleCall}
-                        sx={{ borderRadius: 4, boxShadow: 'none' }}
-                    >
-                        Call
-                    </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+                        <Avatar sx={{ 
+                            width: 36, 
+                            height: 36, 
+                            bgcolor: isSelf ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                            border: isSelf ? '1px solid rgba(0, 240, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)'
+                        }}>
+                            {isSelf ? <BookmarkIcon sx={{ fontSize: 18, color: 'primary.main' }} /> : (conversation?.type === 'group' ? <GroupIcon /> : <PersonIcon sx={{ fontSize: 20 }} />)}
+                        </Avatar>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'var(--font-space-grotesk)', lineHeight: 1.2, color: isSelf ? 'primary.main' : 'text.primary' }}>
+                                {isSelf ? 'Saved Messages' : conversation?.name || 'Loading...'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, opacity: 0.6 }}>
+                                {isSelf ? 'End-to-end encrypted vault' : 'Online'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <Stack direction="row" spacing={0.5}>
+                        <IconButton onClick={() => {}} sx={{ color: 'text.secondary' }}>
+                            <CallIcon sx={{ fontSize: 20 }} />
+                        </IconButton>
+                        <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ color: 'text.secondary' }}>
+                            <MoreVertIcon sx={{ fontSize: 20 }} />
+                        </IconButton>
+                    </Stack>
                 </Toolbar>
             </AppBar>
 
-            {/* Messages */}
-            <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {messages.map((msg) => {
-                    const isMe = msg.senderId === user?.$id;
-
-                    if (msg.type === 'call_signal') {
-                        try {
-                            const signal = JSON.parse(msg.content || '{}');
-                            if (signal.type === 'offer') {
-                                return (
-                                    <Box key={msg.$id} sx={{ alignSelf: 'center', my: 2 }}>
-                                        <Button
-                                            variant="contained"
-                                            color="success"
-                                            startIcon={<CallIcon />}
-                                            onClick={() => router.push(`/call/${conversationId}`)}
-                                            sx={{ borderRadius: 5 }}
-                                        >
-                                            Join Call
-                                        </Button>
-                                    </Box>
-                                );
-                            }
-                            return null;
-                        } catch (e) { return null; }
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                PaperProps={{
+                    sx: {
+                        mt: 1,
+                        borderRadius: '16px',
+                        bgcolor: 'rgba(15, 15, 15, 0.95)',
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundImage: 'none',
+                        minWidth: 180
                     }
+                }}
+            >
+                <MenuItem onClick={() => setAnchorEl(null)} sx={{ gap: 1.5, py: 1.2, fontWeight: 600, fontSize: '0.85rem' }}>
+                    <InfoIcon sx={{ fontSize: 18, opacity: 0.7 }} /> Profile Details
+                </MenuItem>
+                <MenuItem onClick={() => setAnchorEl(null)} sx={{ gap: 1.5, py: 1.2, fontWeight: 600, fontSize: '0.85rem' }}>
+                    <ShieldIcon sx={{ fontSize: 18, opacity: 0.7 }} /> Privacy Settings
+                </MenuItem>
+                <MenuItem onClick={() => setAnchorEl(null)} sx={{ gap: 1.5, py: 1.2, fontWeight: 600, fontSize: '0.85rem', color: '#ff4d4d' }}>
+                    <DeleteIcon sx={{ fontSize: 18, opacity: 0.7 }} /> Clear History
+                </MenuItem>
+            </Menu>
 
-                    return (
-                        <Box
-                            key={msg.$id}
-                            sx={{
-                                alignSelf: isMe ? 'flex-end' : 'flex-start',
-                                maxWidth: '75%',
+            {/* Messages Area */}
+            <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} sx={{ color: 'primary.main' }} /></Box>
+                ) : (
+                    messages.map((msg, index) => (
+                        <Box key={msg.$id} sx={{
+                            alignSelf: msg.senderId === user?.$id ? 'flex-end' : 'flex-start',
+                            maxWidth: '80%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5
+                        }}>
+                            <Paper sx={{
                                 p: 1.5,
-                                borderRadius: 3,
-                                bgcolor: isMe ? 'primary.main' : 'background.paper',
-                                color: isMe ? 'primary.contrastText' : 'text.primary',
-                                borderBottomRightRadius: isMe ? 4 : 16,
-                                borderBottomLeftRadius: isMe ? 16 : 4,
-                                boxShadow: 1
-                            }}
-                        >
-                            {renderMessageContent(msg)}
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
-                                <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem' }}>
-                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                px: 2,
+                                borderRadius: msg.senderId === user?.$id ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                bgcolor: msg.senderId === user?.$id ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                                border: msg.senderId === user?.$id ? '1px solid rgba(0, 240, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)',
+                                color: 'text.primary',
+                                boxShadow: 'none'
+                            }}>
+                                <Typography variant="body2" sx={{ lineHeight: 1.5 }}>{msg.content}</Typography>
+                            </Paper>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, alignSelf: msg.senderId === user?.$id ? 'flex-end' : 'flex-start', px: 0.5 }}>
+                                <Typography variant="caption" sx={{ fontSize: '0.65rem', opacity: 0.4, fontWeight: 600 }}>
+                                    {format(new Date(msg.$createdAt || Date.now()), 'h:mm a')}
                                 </Typography>
-                                {isMe && (
-                                    msg.readBy && msg.readBy.length > 1 ? (
-                                        <DoneAllIcon sx={{ fontSize: '0.9rem', color: 'primary.contrastText' }} />
-                                    ) : (
-                                        <DoneIcon sx={{ fontSize: '0.9rem', color: 'primary.contrastText', opacity: 0.7 }} />
-                                    )
+                                {msg.senderId === user?.$id && (
+                                    msg.readBy?.length && msg.readBy.length > 1 ? <DoneAllIcon sx={{ fontSize: 12, color: 'primary.main' }} /> : <DoneIcon sx={{ fontSize: 12, opacity: 0.4 }} />
                                 )}
                             </Box>
                         </Box>
-                    );
-                })}
+                    ))
+                )}
                 <div ref={messagesEndRef} />
             </Box>
 
-            {/* Attachment Preview */}
-            {attachment && (
-                <Box sx={{ p: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <InsertDriveFileIcon color="primary" />
-                    <Typography variant="body2" sx={{ flex: 1 }} noWrap>
-                        {attachment.name}
-                    </Typography>
-                    <IconButton size="small" onClick={() => setAttachment(null)}>
-                        <CloseIcon />
+            {/* Input Area */}
+            <Box sx={{ p: 2, pb: isMobile ? 4 : 2, bgcolor: 'transparent' }}>
+                <Paper elevation={0} sx={{ 
+                    p: 0.5, 
+                    display: 'flex', 
+                    alignItems: 'flex-end', 
+                    gap: 0.5, 
+                    borderRadius: '24px', 
+                    bgcolor: 'rgba(255, 255, 255, 0.03)', 
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    '&:focus-within': {
+                        borderColor: 'primary.main',
+                        bgcolor: 'rgba(255, 255, 255, 0.05)',
+                    }
+                }}>
+                    <IconButton size="small" onClick={() => fileInputRef.current?.click()} sx={{ color: 'text.secondary', p: 1.2 }}>
+                        <AttachFileIcon sx={{ fontSize: 22 }} />
                     </IconButton>
-                </Box>
-            )}
-
-            {/* Input */}
-            <Paper
-                component="form"
-                onSubmit={handleSend}
-                sx={{ p: 2, display: 'flex', alignItems: 'center', borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
-                elevation={0}
-            >
-                <IconButton onClick={handleAttachClick} color="primary" sx={{ mr: 1 }}>
-                    <AttachFileIcon />
-                </IconButton>
-
-                <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleAttachClose}
-                >
-                    <MenuItem onClick={() => handleFileSelect('image/*')}>
-                        <ListItemIcon><ImageIcon fontSize="small" /></ListItemIcon>
-                        Image
-                    </MenuItem>
-                    <MenuItem onClick={() => handleFileSelect('video/*')}>
-                        <ListItemIcon><VideoFileIcon fontSize="small" /></ListItemIcon>
-                        Video
-                    </MenuItem>
-                    <MenuItem onClick={() => handleFileSelect('audio/*')}>
-                        <ListItemIcon><AudiotrackIcon fontSize="small" /></ListItemIcon>
-                        Audio
-                    </MenuItem>
-                    <MenuItem onClick={() => handleFileSelect('*/*')}>
-                        <ListItemIcon><InsertDriveFileIcon fontSize="small" /></ListItemIcon>
-                        File
-                    </MenuItem>
-                </Menu>
-
-                <input
-                    type="file"
-                    hidden
-                    ref={fileInputRef}
-                    onChange={onFileChange}
-                />
-
-                <TextField
-                    fullWidth
-                    placeholder={isRecording ? "Recording..." : "Type a message..."}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    variant="outlined"
-                    size="small"
-                    disabled={isRecording || sending}
-                    sx={{
-                        mr: 1,
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 4,
-                            bgcolor: 'background.default'
-                        }
-                    }}
-                />
-
-                {inputText.trim() || attachment ? (
-                    <IconButton
-                        type="submit"
-                        color="primary"
-                        disabled={sending}
-                        sx={{
-                            bgcolor: 'primary.main',
-                            color: 'primary.contrastText',
-                            '&:hover': { bgcolor: 'primary.dark' },
-                            width: 40,
-                            height: 40
+                    <input type="file" hidden ref={fileInputRef} onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
+                    
+                    <TextField
+                        fullWidth
+                        multiline
+                        maxRows={4}
+                        placeholder="Type a message..."
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        variant="standard"
+                        InputProps={{
+                            disableUnderline: true,
+                            sx: { py: 1.2, px: 1, fontSize: '0.95rem' }
                         }}
-                    >
-                        {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
-                    </IconButton>
-                ) : (
-                    <IconButton
-                        onClick={toggleRecording}
-                        color={isRecording ? "error" : "default"}
-                        sx={{
-                            bgcolor: isRecording ? 'error.light' : 'transparent',
-                            '&:hover': { bgcolor: isRecording ? 'error.main' : 'action.hover' }
-                        }}
-                    >
-                        {isRecording ? <StopIcon /> : <MicIcon />}
-                    </IconButton>
-                )}
-            </Paper>
+                    />
+
+                    {inputText.trim() || attachment ? (
+                        <IconButton 
+                            onClick={() => handleSend()} 
+                            disabled={sending} 
+                            sx={{ 
+                                bgcolor: 'primary.main', 
+                                color: 'black', 
+                                m: 0.5,
+                                '&:hover': { bgcolor: 'rgba(0, 240, 255, 0.8)' },
+                                '&.Mui-disabled': { bgcolor: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255, 255, 255, 0.1)' }
+                            }}
+                        >
+                            {sending ? <CircularProgress size={20} color="inherit" /> : <SendIcon sx={{ fontSize: 20 }} />}
+                        </IconButton>
+                    ) : (
+                        <IconButton 
+                            onClick={() => setIsRecording(!isRecording)} 
+                            sx={{ 
+                                color: isRecording ? '#ff4d4d' : 'text.secondary',
+                                p: 1.2,
+                                animation: isRecording ? 'pulse 1.5s infinite' : 'none'
+                            }}
+                        >
+                            {isRecording ? <StopIcon sx={{ fontSize: 24 }} /> : <MicIcon sx={{ fontSize: 24 }} />}
+                        </IconButton>
+                    )}
+                </Paper>
+            </Box>
         </Box>
     );
 };
