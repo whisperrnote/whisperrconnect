@@ -109,7 +109,7 @@ export const Feed = () => {
         if (!newMoment.trim() && !selectedNote) return;
         setPosting(true);
         try {
-            await SocialService.createMoment(user!.$id, newMoment, 'text', [], 'public', selectedNote?.$id);
+            await SocialService.createMoment(user!.$id, newMoment, 'image', [], 'public', selectedNote?.$id);
             setNewMoment('');
             setSelectedNote(null);
             loadFeed();

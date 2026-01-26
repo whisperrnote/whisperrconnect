@@ -17,22 +17,18 @@ export const SocialService = {
 
         // Enrich moments with attached note data if present
         const enrichedRows = await Promise.all(moments.rows.map(async (moment: any) => {
-            if (moment.caption && moment.caption.startsWith('{"text":')) {
+            if (moment.fileId && moment.fileId.startsWith('note:')) {
+                const noteId = moment.fileId.replace('note:', '');
                 try {
-                    const metadata = JSON.parse(moment.caption);
-                    if (metadata.noteId) {
-                        try {
-                            const note = await tablesDB.getRow(
-                                APPWRITE_CONFIG.DATABASES.WHISPERRNOTE,
-                                '67ff05f3002502ef239e',
-                                metadata.noteId
-                            );
-                            return { ...moment, attachedNote: note, caption: metadata.text || "" };
-                        } catch (e) {
-                            return { ...moment, caption: metadata.text || "" };
-                        }
-                    }
-                } catch (e) {}
+                    const note = await tablesDB.getRow(
+                        APPWRITE_CONFIG.DATABASES.WHISPERRNOTE,
+                        '67ff05f3002502ef239e',
+                        noteId
+                    );
+                    return { ...moment, attachedNote: note };
+                } catch (e) {
+                    return moment;
+                }
             }
             return moment;
         }));
@@ -56,7 +52,7 @@ export const SocialService = {
         });
     },
 
-    async createMoment(creatorId: string, content: string, type: 'text' | 'image' | 'video' = 'text', mediaIds: string[] = [], visibility: 'public' | 'private' | 'followers' = 'public', noteId?: string) {
+    async createMoment(creatorId: string, content: string, type: 'image' | 'video' = 'image', mediaIds: string[] = [], visibility: 'public' | 'private' | 'followers' = 'public', noteId?: string) {
         const permissions = [
             `read("user:${creatorId}")`,
             `update("user:${creatorId}")`,
@@ -67,20 +63,15 @@ export const SocialService = {
             permissions.push('read("any")');
         }
 
-        let captionPayload = content;
-        if (noteId) {
-            captionPayload = JSON.stringify({
-                text: content,
-                noteId: noteId,
-                noteCreatorId: creatorId
-            });
-        }
+        // We MUST provide a fileId because it is required in the schema.
+        // If we have a noteId, we use it as the fileId with a prefix to distinguish it.
+        const effectiveFileId = noteId ? `note:${noteId}` : (mediaIds[0] || "none");
 
         return await tablesDB.createRow(DB_ID, MOMENTS_TABLE, ID.unique(), {
             userId: creatorId, 
-            caption: captionPayload,
-            type,
-            fileId: mediaIds[0] || "none", 
+            caption: content,
+            type, // Must be 'image' or 'video'
+            fileId: effectiveFileId, 
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() 
         }, permissions);
