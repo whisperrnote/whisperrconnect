@@ -35,6 +35,7 @@ export const viewport = {
 import { AuthOverlay } from '@/components/auth/AuthOverlay';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { PresenceProvider } from '@/components/providers/PresenceProvider';
+import { NotificationProvider } from '@/components/providers/NotificationProvider';
 import { EcosystemClient } from '@/components/ecosystem/EcosystemClient';
 import { IslandProvider } from '@/components/common/DynamicIsland';
 import { Suspense } from 'react';
@@ -53,12 +54,14 @@ export default function RootLayout({
         <EcosystemClient nodeId="connect" />
         <ThemeProvider>
           <IslandProvider>
-            <PresenceProvider>
-              <AuthOverlay />
-              <Suspense fallback={null}>
-                {children}
-              </Suspense>
-            </PresenceProvider>
+            <NotificationProvider>
+              <PresenceProvider>
+                <AuthOverlay />
+                <Suspense fallback={null}>
+                  {children}
+                </Suspense>
+              </PresenceProvider>
+            </NotificationProvider>
           </IslandProvider>
         </ThemeProvider>
       </body>
