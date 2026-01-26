@@ -22,11 +22,10 @@ import {
     Home, 
     MessageSquare, 
     Phone, 
-    User as UserIcon, 
+    User, 
     Settings, 
-    LogOut, 
-    Sun, 
-    Moon 
+    LogOut,
+    Activity
 } from 'lucide-react';
 import { useColorMode } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/lib/auth';
@@ -43,7 +42,7 @@ export const Navigation = () => {
         { label: 'Home', href: '/', icon: <Home size={20} strokeWidth={1.5} /> },
         { label: 'Chats', href: '/chats', icon: <MessageSquare size={20} strokeWidth={1.5} /> },
         { label: 'Calls', href: '/calls', icon: <Phone size={20} strokeWidth={1.5} /> },
-        { label: 'Profile', href: '/profile', icon: <UserIcon size={20} strokeWidth={1.5} /> },
+        { label: 'Profile', href: '/profile', icon: <User size={20} strokeWidth={1.5} /> },
     ];
 
     return (
@@ -98,13 +97,52 @@ export const Navigation = () => {
             </Box>
 
             <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                        THEME
-                    </Typography>
-                    <IconButton onClick={colorMode.toggleColorMode} size="small">
-                        {theme.palette.mode === 'dark' ? <Sun size={18} strokeWidth={1.5} /> : <Moon size={18} strokeWidth={1.5} />}
-                    </IconButton>
+                {/* Ecosystem Pulse */}
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2, 
+                    p: 2, 
+                    mb: 2,
+                    borderRadius: '16px', 
+                    bgcolor: 'rgba(255, 255, 255, 0.02)', 
+                    border: '1px solid rgba(255, 255, 255, 0.05)' 
+                }}>
+                    <Box sx={{ position: 'relative', display: 'flex' }}>
+                        <Box sx={{ 
+                            width: 8, 
+                            height: 8, 
+                            bgcolor: '#10b981', 
+                            borderRadius: '50%',
+                            boxShadow: '0 0 10px #10b981'
+                        }} />
+                        <Box sx={{ 
+                            position: 'absolute',
+                            inset: 0,
+                            bgcolor: '#10b981',
+                            borderRadius: '50%',
+                            animation: 'pulse 2s infinite',
+                            opacity: 0.4
+                        }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: 800, 
+                            color: 'white',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Connect
+                        </Typography>
+                        <Typography sx={{ 
+                            fontSize: '0.65rem', 
+                            color: 'rgba(255, 255, 255, 0.4)',
+                            fontWeight: 600
+                        }}>
+                            Active Node
+                        </Typography>
+                    </Box>
                 </Box>
 
                 {user && (

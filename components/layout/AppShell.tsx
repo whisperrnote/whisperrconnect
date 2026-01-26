@@ -23,13 +23,16 @@ import {
     InputBase,
     alpha
 } from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
-import HomeIcon from '@mui/icons-material/Home';
-import CallIcon from '@mui/icons-material/Call';
-import PersonIcon from '@mui/icons-material/Person';
-import SearchIcon from '@mui/icons-material/Search';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { 
+    MessageSquare, 
+    Home, 
+    Phone, 
+    User, 
+    Search, 
+    Settings, 
+    LogOut,
+    Activity
+} from 'lucide-react';
 import { useColorMode } from '@/components/providers/ThemeProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
@@ -44,8 +47,6 @@ import {
     Divider,
     Stack
 } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import SettingsIcon from '@mui/icons-material/Settings';
 
 const drawerWidth = 280;
 
@@ -96,10 +97,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const isProfilePage = pathname === '/profile' || pathname?.startsWith('/u/');
 
     const navItems = [
-        { label: 'Home', href: '/', icon: <HomeIcon /> },
-        { label: 'Chats', href: '/chats', icon: <ChatIcon /> },
-        { label: 'Calls', href: '/calls', icon: <CallIcon /> },
-        { label: 'Profile', href: '/profile', icon: <PersonIcon /> },
+        { label: 'Home', href: '/', icon: <Home size={20} strokeWidth={1.5} /> },
+        { label: 'Chats', href: '/chats', icon: <MessageSquare size={20} strokeWidth={1.5} /> },
+        { label: 'Calls', href: '/calls', icon: <Phone size={20} strokeWidth={1.5} /> },
+        { label: 'Profile', href: '/profile', icon: <User size={20} strokeWidth={1.5} /> },
     ];
 
     if (isEmbedded) {
@@ -182,7 +183,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                 }
                             }}
                         >
-                            <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                            <Search size={18} color={theme.palette.text.secondary} strokeWidth={1.5} />
                             <InputBase
                                 sx={{ ml: 1, flex: 1, color: 'text.primary', fontSize: '0.875rem' }}
                                 placeholder="Search..."
@@ -191,9 +192,46 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             />
                         </Box>
 
-                        <IconButton onClick={colorMode.toggleColorMode} sx={{ color: 'text.secondary' }}>
-                            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                        </IconButton>
+                        {/* Ecosystem Pulse */}
+                        {!isMobile && (
+                            <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1.5, 
+                                px: 2, 
+                                py: 0.75, 
+                                borderRadius: '12px', 
+                                bgcolor: 'rgba(255, 255, 255, 0.03)', 
+                                border: '1px solid rgba(255, 255, 255, 0.05)' 
+                            }}>
+                                <Box sx={{ position: 'relative', display: 'flex' }}>
+                                    <Box sx={{ 
+                                        width: 8, 
+                                        height: 8, 
+                                        bgcolor: '#10b981', 
+                                        borderRadius: '50%',
+                                        boxShadow: '0 0 10px #10b981'
+                                    }} />
+                                    <Box sx={{ 
+                                        position: 'absolute',
+                                        inset: 0,
+                                        bgcolor: '#10b981',
+                                        borderRadius: '50%',
+                                        animation: 'pulse 2s infinite',
+                                        opacity: 0.4
+                                    }} />
+                                </Box>
+                                <Typography sx={{ 
+                                    fontSize: '0.7rem', 
+                                    fontWeight: 800, 
+                                    color: 'rgba(255, 255, 255, 0.5)', 
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    Connect
+                                </Typography>
+                            </Box>
+                        )}
 
                         <IconButton onClick={handleProfileClick} sx={{ 
                             p: 0.5,
@@ -275,7 +313,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     }}
                     sx={{ py: 1.5, px: 2.5, gap: 1.5 }}
                 >
-                    <SettingsIcon sx={{ fontSize: 18, color: "rgba(255, 255, 255, 0.6)" }} />
+                    <Settings size={18} color="rgba(255, 255, 255, 0.6)" strokeWidth={1.5} />
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>Account Settings</Typography>
                 </MenuItem>
                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.05)' }} />
@@ -286,7 +324,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     }}
                     sx={{ py: 1.5, px: 2.5, gap: 1.5, color: '#FF4D4D' }}
                 >
-                    <LogoutIcon sx={{ fontSize: 18 }} />
+                    <LogOut size={18} strokeWidth={1.5} />
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>Logout</Typography>
                 </MenuItem>
             </Menu>
