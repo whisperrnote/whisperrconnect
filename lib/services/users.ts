@@ -64,26 +64,20 @@ export const UsersService = {
             ];
 
             // Order of preference for avatar field names in the ecosystem
-            const attempts = [
-                { avatarFileId: profilePicId },
-                { profilePicId: profilePicId },
-                { avatarUrl: profilePicId },
-                {} // Final fallback: no avatar field
-            ];
+            const avatarFieldCandidates = ['avatarFileId', 'profilePicId', 'avatarUrl'];
 
             if (!profile) {
                 console.log('[Identity] Initializing global record for:', user.$id);
-                for (const attempt of attempts) {
+                for (const field of avatarFieldCandidates) {
                     try {
                         const payload = { ...baseData, createdAt: new Date().toISOString() };
-                        const key = Object.keys(attempt)[0];
-                        if (key && profilePicId) payload[key] = profilePicId;
+                        if (profilePicId) payload[field] = profilePicId;
 
                         await tablesDB.createRow(DB_ID, USERS_TABLE, user.$id, payload, permissions);
                         break; 
                     } catch (e: any) {
-                        const errStr = (e.message || JSON.stringify(e)).toLowerCase();
-                        if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                        const msg = (e.message || JSON.stringify(e)).toLowerCase();
+                        if (msg.includes('unknown attribute') || msg.includes('invalid document structure')) {
                             continue;
                         }
                         throw e;
@@ -95,17 +89,16 @@ export const UsersService = {
                 
                 if (needsHealing) {
                     console.log('[Identity] Healing global record for:', user.$id);
-                    for (const attempt of attempts) {
+                    for (const field of avatarFieldCandidates) {
                         try {
                             const payload = { ...baseData };
-                            const key = Object.keys(attempt)[0];
-                            if (key && profilePicId) payload[key] = profilePicId;
+                            if (profilePicId) payload[field] = profilePicId;
 
                             await tablesDB.updateRow(DB_ID, USERS_TABLE, user.$id, payload);
                             break;
                         } catch (e: any) {
-                            const errStr = (e.message || JSON.stringify(e)).toLowerCase();
-                            if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                            const msg = (e.message || JSON.stringify(e)).toLowerCase();
+                            if (msg.includes('unknown attribute') || msg.includes('invalid document structure')) {
                                 continue;
                             }
                             throw e;
@@ -233,24 +226,25 @@ export const UsersService = {
             Permission.delete(Role.user(userId))
         ];
 
-        const attempts = [
-            { avatarFileId: picId },
-            { profilePicId: picId },
-            {}
-        ];
+        const avatarFieldCandidates = ['avatarFileId', 'profilePicId', 'avatarUrl'];
 
-        for (const attempt of attempts) {
+        for (const field of avatarFieldCandidates) {
             try {
-                const payload = { ...baseData, ...attempt };
+                const payload = { ...baseData };
+                if (picId) payload[field] = picId;
+                
                 return await tablesDB.createRow(DB_ID, USERS_TABLE, userId, payload, permissions);
             } catch (e: any) {
-                const errStr = JSON.stringify(e).toLowerCase();
-                if (errStr.includes('unknown attribute') || errStr.includes('invalid document structure')) {
+                const msg = (e.message || JSON.stringify(e)).toLowerCase();
+                if (msg.includes('unknown attribute') || msg.includes('invalid document structure')) {
                     continue;
                 }
                 throw e;
             }
         }
+
+        // Final fallback: no avatar field
+        return await tablesDB.createRow(DB_ID, USERS_TABLE, userId, baseData, permissions);
     },
 
     async getWhisperrnoteUserById(userId: string) {
