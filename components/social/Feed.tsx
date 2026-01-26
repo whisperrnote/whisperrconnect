@@ -72,6 +72,53 @@ export const Feed = () => {
         if (user) {
             loadFeed();
             fetchUserAvatar();
+
+            // Real-time subscription for new posts
+            const unsub = SocialService.subscribeToFeed(async (event) => {
+                if (event.type === 'create') {
+                    const moment = event.payload;
+                    
+                    // Don't add if already in feed or if it's our own (already handled by handlePost loadFeed)
+                    // Actually, better to just enrich and add it to provide that "instant" feel for everyone
+                    const creatorId = moment.userId || moment.creatorId;
+                    try {
+                        const creator = await UsersService.getProfileById(creatorId);
+                        
+                        let avatarUrl = null;
+                        const picId = creator?.profilePicId || creator?.avatarFileId || creator?.avatarUrl || creator?.avatar;
+                        if (picId && typeof picId === 'string' && picId.length > 5) {
+                            try {
+                                const url = await fetchProfilePreview(picId, 64, 64);
+                                avatarUrl = url as unknown as string;
+                            } catch (e) {}
+                        }
+
+                        const enrichedMoment = { 
+                            ...moment, 
+                            creator: creator ? { ...creator, avatarUrl } : {
+                                username: `user_${creatorId.slice(0, 5)}`,
+                                displayName: 'Whisperr User',
+                                avatarUrl: null,
+                                $id: creatorId
+                            }
+                        };
+                        
+                        setMoments(prev => {
+                            if (prev.some(m => m.$id === enrichedMoment.$id)) return prev;
+                            return [enrichedMoment, ...prev];
+                        });
+                    } catch (e) {
+                        console.warn('Failed to enrich real-time moment', e);
+                    }
+                } else if (event.type === 'delete') {
+                    setMoments(prev => prev.filter(m => m.$id !== event.payload.$id));
+                }
+            });
+
+            return () => {
+                if (typeof unsub === 'function') unsub();
+                else (unsub as any).unsubscribe?.();
+            };
         }
     }, [user]);
 
@@ -93,8 +140,8 @@ export const Feed = () => {
             const response = await SocialService.getFeed(user.$id);
             // Enrich with creator details and avatars
             const enriched = await Promise.all(response.rows.map(async (moment: any) => {
+                const creatorId = moment.userId || moment.creatorId;
                 try {
-                    const creatorId = moment.userId || moment.creatorId;
                     const creator = await UsersService.getProfileById(creatorId);
                     
                     let avatarUrl = null;
@@ -106,9 +153,19 @@ export const Feed = () => {
                         } catch (e) {}
                     }
 
-                    return { ...moment, creator: { ...creator, avatarUrl } };
+                    if (creator) {
+                        return { ...moment, creator: { ...creator, avatarUrl } };
+                    }
+                    throw new Error('Creator not found');
                 } catch (e) {
-                    return { ...moment, creator: { username: 'user', $id: moment.userId || moment.creatorId } };
+                    return { 
+                        ...moment, 
+                        creator: { 
+                            username: `user_${creatorId.slice(0, 5)}`, 
+                            displayName: 'Whisperr User',
+                            $id: creatorId 
+                        } 
+                    };
                 }
             }));
             setMoments(enriched);

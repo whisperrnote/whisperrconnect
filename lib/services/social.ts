@@ -83,7 +83,7 @@ export const SocialService = {
         if (eventId) effectiveFileId = `event:${eventId}`;
         else if (noteId) effectiveFileId = `note:${noteId}`;
 
-        return await tablesDB.createRow(DB_ID, MOMENTS_TABLE, ID.unique(), {
+        const moment = await tablesDB.createRow(DB_ID, MOMENTS_TABLE, ID.unique(), {
             userId: creatorId, 
             caption: content,
             type, // Must be 'image' or 'video'
@@ -91,6 +91,31 @@ export const SocialService = {
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() 
         }, permissions);
+
+        // Record in Activity Log for Ecosystem Notifications
+        try {
+            await tablesDB.createRow(
+                APPWRITE_CONFIG.DATABASES.WHISPERRNOTE, 
+                APPWRITE_CONFIG.TABLES.WHISPERRNOTE.ACTIVITY_LOG, 
+                ID.unique(), 
+                {
+                    userId: creatorId,
+                    action: 'Post Created',
+                    targetType: 'moment',
+                    targetId: moment.$id,
+                    timestamp: new Date().toISOString(),
+                    details: JSON.stringify({
+                        read: false,
+                        originalDetails: `New post shared: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+                        actionUrl: `https://connect.${process.env.NEXT_PUBLIC_DOMAIN || 'whisperrnote.space'}/`
+                    })
+                }
+            );
+        } catch (logErr) {
+            console.warn('Failed to log moment creation to activityLog', logErr);
+        }
+
+        return moment;
     },
 
     async deleteMoment(momentId: string) {
