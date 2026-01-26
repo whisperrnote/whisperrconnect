@@ -20,6 +20,7 @@ import {
     Divider,
     Menu,
     MenuItem,
+    Paper,
     alpha
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -28,6 +29,7 @@ import ShareIcon from '@mui/icons-material/ShareOutlined';
 import CommentIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import SendIcon from '@mui/icons-material/SendOutlined';
 import BookmarkIcon from '@mui/icons-material/BookmarkBorderOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import { useRouter } from 'next/navigation';
 import { fetchProfilePreview } from '@/lib/profile-preview';
 import { getUserProfilePicId } from '@/lib/user-utils';
