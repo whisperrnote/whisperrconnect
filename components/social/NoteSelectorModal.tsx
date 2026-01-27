@@ -19,7 +19,8 @@ import {
     IconButton,
     alpha,
     Paper,
-    Fade
+    Fade,
+    InputBase
 } from '@mui/material';
 import {
     FileText,
