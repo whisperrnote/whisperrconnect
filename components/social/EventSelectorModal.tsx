@@ -15,10 +15,20 @@ import {
     CircularProgress,
     Box,
     TextField,
-    InputAdornment
+    InputAdornment,
+    IconButton,
+    alpha,
+    Paper,
+    Fade
 } from '@mui/material';
-import EventIcon from '@mui/icons-material/Event';
-import SearchIcon from '@mui/icons-material/Search';
+import {
+    Calendar,
+    Search,
+    X,
+    Clock,
+    MapPin,
+    AlertCircle
+} from 'lucide-react';
 import { EcosystemService } from '@/lib/services/ecosystem';
 import { useAuth } from '@/lib/auth';
 
@@ -61,32 +71,103 @@ export const EventSelectorModal = ({ open, onClose, onSelect }: EventSelectorMod
     );
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-            <DialogTitle sx={{ fontWeight: 800 }}>Attach an Event</DialogTitle>
-            <DialogContent dividers>
-                <TextField
-                    fullWidth
-                    placeholder="Search your events..."
-                    variant="outlined"
-                    size="small"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ fontSize: 20 }} />
-                            </InputAdornment>
-                        ),
+        <Dialog 
+            open={open} 
+            onClose={onClose} 
+            maxWidth="sm" 
+            fullWidth 
+            TransitionComponent={Fade}
+            PaperProps={{ 
+                sx: { 
+                    borderRadius: '28px',
+                    bgcolor: 'rgba(10, 10, 10, 0.9)',
+                    backdropFilter: 'blur(25px) saturate(180%)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundImage: 'none',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
+                    overflow: 'hidden'
+                } 
+            }}
+        >
+            <DialogTitle sx={{ 
+                p: 3, 
+                pb: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ 
+                        p: 1, 
+                        borderRadius: '12px', 
+                        bgcolor: alpha('#00A3FF', 0.1), 
+                        color: '#00A3FF',
+                        display: 'flex'
+                    }}>
+                        <Calendar size={24} strokeWidth={1.5} />
+                    </Box>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                            Attach Orchestrated Event
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600 }}>
+                            Select a public event from your WhisperrFlow calendar
+                        </Typography>
+                    </Box>
+                </Box>
+                <IconButton onClick={onClose} sx={{ color: 'rgba(255, 255, 255, 0.3)', '&:hover': { color: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)' } }}>
+                    <X size={20} />
+                </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 3, mt: 1 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '16px',
+                        px: 2,
+                        py: 1,
+                        mb: 3,
+                        transition: 'all 0.2s ease',
+                        '&:focus-within': {
+                            borderColor: alpha('#00A3FF', 0.5),
+                            bgcolor: 'rgba(255, 255, 255, 0.05)',
+                        }
                     }}
-                />
+                >
+                    <Search size={18} color="rgba(255, 255, 255, 0.3)" strokeWidth={1.5} />
+                    <Box sx={{ width: 12 }} />
+                    <InputBase
+                        autoFocus
+                        placeholder="Search your events..."
+                        fullWidth
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        sx={{
+                            color: 'white',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            '& .MuiInputBase-input::placeholder': {
+                                color: 'rgba(255, 255, 255, 0.3)',
+                                opacity: 1,
+                            },
+                        }}
+                    />
+                </Box>
                 
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                        <CircularProgress size={24} />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 2 }}>
+                        <CircularProgress size={32} sx={{ color: '#00A3FF' }} />
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 700, letterSpacing: '0.1em' }}>
+                            SYNCING CALENDAR...
+                        </Typography>
                     </Box>
                 ) : filteredEvents.length > 0 ? (
-                    <List>
+                    <List sx={{ pt: 0 }}>
                         {filteredEvents.map((event) => (
                             <ListItem 
                                 key={event.$id} 
@@ -97,40 +178,91 @@ export const EventSelectorModal = ({ open, onClose, onSelect }: EventSelectorMod
                                 }}
                                 sx={{ 
                                     cursor: 'pointer', 
-                                    borderRadius: 2,
-                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' },
-                                    mb: 1,
-                                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                                    borderRadius: '16px',
+                                    p: 2,
+                                    mb: 1.5,
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    bgcolor: 'rgba(255, 255, 255, 0.01)',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': { 
+                                        bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                        borderColor: alpha('#00A3FF', 0.3),
+                                        transform: 'translateX(4px)'
+                                    }
                                 }}
                             >
-                                <ListItemIcon>
-                                    <EventIcon color="primary" />
+                                <ListItemIcon sx={{ minWidth: 48 }}>
+                                    <Box sx={{ 
+                                        width: 36, 
+                                        height: 36, 
+                                        borderRadius: '10px', 
+                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#00A3FF'
+                                    }}>
+                                        <Calendar size={20} strokeWidth={1.5} />
+                                    </Box>
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={event.title || 'Untitled Event'} 
                                     secondary={
-                                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                                            {new Date(event.startTime).toLocaleString()} • {event.location || 'No location'}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'rgba(255, 255, 255, 0.4)' }}>
+                                                <Clock size={12} />
+                                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                    {new Date(event.startTime).toLocaleDateString()} • {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </Typography>
+                                            </Box>
+                                            {event.location && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'rgba(255, 255, 255, 0.4)' }}>
+                                                    <MapPin size={12} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                        {event.location}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
                                     }
-                                    primaryTypographyProps={{ fontWeight: 700 }}
+                                    primaryTypographyProps={{ 
+                                        sx: { fontWeight: 800, color: 'white', fontSize: '0.95rem' } 
+                                    }}
                                 />
                             </ListItem>
                         ))}
                     </List>
                 ) : (
-                    <Box sx={{ textAlign: 'center', py: 4 }}>
-                        <Typography color="text.secondary">
-                            {searchQuery ? 'No matching public events found.' : 'No public events found.'}
+                    <Box sx={{ textAlign: 'center', py: 8, px: 4 }}>
+                        <Box sx={{ mb: 2, color: 'rgba(255, 255, 255, 0.1)' }}>
+                            <AlertCircle size={48} strokeWidth={1} />
+                        </Box>
+                        <Typography sx={{ color: 'white', fontWeight: 800, mb: 1 }}>
+                            {searchQuery ? 'NO_MATCHING_EVENTS' : 'CALENDAR_EMPTY_OR_PRIVATE'}
                         </Typography>
-                        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                            Only events marked as "Public" in WhisperrFlow can be shared in the ecosystem feed.
+                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.4)', lineHeight: 1.6 }}>
+                            {searchQuery 
+                                ? `No public events found matching "${searchQuery}".` 
+                                : 'Only events marked as "Public" in WhisperrFlow can be shared in the ecosystem feed.'}
                         </Typography>
                     </Box>
                 )}
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
+            
+            <DialogActions sx={{ p: 3, pt: 0 }}>
+                <Button 
+                    onClick={onClose}
+                    sx={{ 
+                        borderRadius: '12px', 
+                        px: 3, 
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        '&:hover': { color: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)' }
+                    }}
+                >
+                    Cancel
+                </Button>
             </DialogActions>
         </Dialog>
     );

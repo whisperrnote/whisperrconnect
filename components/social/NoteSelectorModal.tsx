@@ -15,10 +15,19 @@ import {
     CircularProgress,
     Box,
     TextField,
-    InputAdornment
+    InputAdornment,
+    IconButton,
+    alpha,
+    Paper,
+    Fade
 } from '@mui/material';
-import DescriptionIcon from '@mui/icons-material/Description';
-import SearchIcon from '@mui/icons-material/Search';
+import {
+    FileText,
+    Search,
+    X,
+    FileCheck,
+    AlertCircle
+} from 'lucide-react';
 import { EcosystemService } from '@/lib/services/ecosystem';
 import { useAuth } from '@/lib/auth';
 
@@ -61,32 +70,103 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
     );
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-            <DialogTitle sx={{ fontWeight: 800 }}>Attach a Note</DialogTitle>
-            <DialogContent dividers>
-                <TextField
-                    fullWidth
-                    placeholder="Search your public notes..."
-                    variant="outlined"
-                    size="small"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ fontSize: 20 }} />
-                            </InputAdornment>
-                        ),
+        <Dialog 
+            open={open} 
+            onClose={onClose} 
+            maxWidth="sm" 
+            fullWidth 
+            TransitionComponent={Fade}
+            PaperProps={{ 
+                sx: { 
+                    borderRadius: '28px',
+                    bgcolor: 'rgba(10, 10, 10, 0.9)',
+                    backdropFilter: 'blur(25px) saturate(180%)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundImage: 'none',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
+                    overflow: 'hidden'
+                } 
+            }}
+        >
+            <DialogTitle sx={{ 
+                p: 3, 
+                pb: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ 
+                        p: 1, 
+                        borderRadius: '12px', 
+                        bgcolor: alpha('#00F5FF', 0.1), 
+                        color: '#00F5FF',
+                        display: 'flex'
+                    }}>
+                        <FileText size={24} strokeWidth={1.5} />
+                    </Box>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                            Attach Cognitive Note
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600 }}>
+                            Select a public note from your WhisperrNote vault
+                        </Typography>
+                    </Box>
+                </Box>
+                <IconButton onClick={onClose} sx={{ color: 'rgba(255, 255, 255, 0.3)', '&:hover': { color: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)' } }}>
+                    <X size={20} />
+                </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 3, mt: 1 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '16px',
+                        px: 2,
+                        py: 1,
+                        mb: 3,
+                        transition: 'all 0.2s ease',
+                        '&:focus-within': {
+                            borderColor: alpha('#00F5FF', 0.5),
+                            bgcolor: 'rgba(255, 255, 255, 0.05)',
+                        }
                     }}
-                />
+                >
+                    <Search size={18} color="rgba(255, 255, 255, 0.3)" strokeWidth={1.5} />
+                    <Box sx={{ width: 12 }} />
+                    <InputBase
+                        autoFocus
+                        placeholder="Search your notes..."
+                        fullWidth
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        sx={{
+                            color: 'white',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            '& .MuiInputBase-input::placeholder': {
+                                color: 'rgba(255, 255, 255, 0.3)',
+                                opacity: 1,
+                            },
+                        }}
+                    />
+                </Box>
                 
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                        <CircularProgress size={24} />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 2 }}>
+                        <CircularProgress size={32} sx={{ color: '#00F5FF' }} />
+                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 700, letterSpacing: '0.1em' }}>
+                            ACCESSING VAULT...
+                        </Typography>
                     </Box>
                 ) : filteredNotes.length > 0 ? (
-                    <List>
+                    <List sx={{ pt: 0 }}>
                         {filteredNotes.map((note) => (
                             <ListItem 
                                 key={note.$id} 
@@ -97,40 +177,78 @@ export const NoteSelectorModal = ({ open, onClose, onSelect }: NoteSelectorModal
                                 }}
                                 sx={{ 
                                     cursor: 'pointer', 
-                                    borderRadius: 2,
-                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' },
-                                    mb: 1,
-                                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                                    borderRadius: '16px',
+                                    p: 2,
+                                    mb: 1.5,
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    bgcolor: 'rgba(255, 255, 255, 0.01)',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': { 
+                                        bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                        borderColor: alpha('#00F5FF', 0.3),
+                                        transform: 'translateX(4px)'
+                                    }
                                 }}
                             >
-                                <ListItemIcon>
-                                    <DescriptionIcon color="primary" />
+                                <ListItemIcon sx={{ minWidth: 48 }}>
+                                    <Box sx={{ 
+                                        width: 36, 
+                                        height: 36, 
+                                        borderRadius: '10px', 
+                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#00F5FF'
+                                    }}>
+                                        <FileCheck size={20} strokeWidth={1.5} />
+                                    </Box>
                                 </ListItemIcon>
                                 <ListItemText 
                                     primary={note.title || 'Untitled Note'} 
                                     secondary={
-                                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                                            {note.content?.substring(0, 80).replace(/[#*`]/g, '')}...
+                                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.4)', display: 'block', mt: 0.5, noWrap: true, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {note.content?.substring(0, 100).replace(/[#*`]/g, '')}
                                         </Typography>
                                     }
-                                    primaryTypographyProps={{ fontWeight: 700 }}
+                                    primaryTypographyProps={{ 
+                                        sx: { fontWeight: 800, color: 'white', fontSize: '0.95rem' } 
+                                    }}
                                 />
                             </ListItem>
                         ))}
                     </List>
                 ) : (
-                    <Box sx={{ textAlign: 'center', py: 4 }}>
-                        <Typography color="text.secondary">
-                            {searchQuery ? 'No matching notes found.' : 'No public notes found.'}
+                    <Box sx={{ textAlign: 'center', py: 8, px: 4 }}>
+                        <Box sx={{ mb: 2, color: 'rgba(255, 255, 255, 0.1)' }}>
+                            <AlertCircle size={48} strokeWidth={1} />
+                        </Box>
+                        <Typography sx={{ color: 'white', fontWeight: 800, mb: 1 }}>
+                            {searchQuery ? 'NO_MATCHING_NOTES' : 'VAULT_EMPTY_OR_PRIVATE'}
                         </Typography>
-                        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                            Only notes marked as "Public" in WhisperrNote can be attached.
+                        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.4)', lineHeight: 1.6 }}>
+                            {searchQuery 
+                                ? `No public notes found matching "${searchQuery}".` 
+                                : 'Only notes marked as "Public" in WhisperrNote can be shared in the ecosystem feed.'}
                         </Typography>
                     </Box>
                 )}
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
+            
+            <DialogActions sx={{ p: 3, pt: 0 }}>
+                <Button 
+                    onClick={onClose}
+                    sx={{ 
+                        borderRadius: '12px', 
+                        px: 3, 
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        '&:hover': { color: 'white', bgcolor: 'rgba(255, 255, 255, 0.05)' }
+                    }}
+                >
+                    Cancel
+                </Button>
             </DialogActions>
         </Dialog>
     );
