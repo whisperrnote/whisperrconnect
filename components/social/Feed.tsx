@@ -116,7 +116,7 @@ export const Feed = () => {
             });
 
             return () => {
-                if (typeof unsub === 'function') unsub();
+                if (typeof unsub === 'function') (unsub as any)();
                 else (unsub as any).unsubscribe?.();
             };
         }
